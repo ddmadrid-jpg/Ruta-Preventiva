@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- jQuery, Select2, Flatpickr, Chart.js & DataLabels Plugin -->
+  <!-- jQuery, Select2, Flatpickr & Chart.js -->
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   
@@ -19,7 +19,6 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
   <style>
     :root {
@@ -100,8 +99,8 @@
       flex-direction: row;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 24px;
-      gap: 15px;
+      padding: 16px 24px;
+      gap: 20px;
     }
 
     .kpi-card.alert {
@@ -118,25 +117,51 @@
     }
 
     .kpi-value {
-      font-size: 26px;
+      font-size: 28px;
       font-weight: 700;
       color: #1a1a1a;
     }
 
-    .kpi-subtext {
+    /* Badges con los % bien visibles y ordenados */
+    .badge-pct-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .badge-pct {
       font-size: 12px;
-      color: #888;
-      margin-top: 4px;
+      font-weight: bold;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      width: fit-content;
+    }
+
+    .badge-schop {
+      background-color: #e6f0e6;
+      color: var(--excel-green-header);
+      border: 1px solid #b3d1b3;
+    }
+
+    .badge-postmix {
+      background-color: #e6f0fa;
+      color: var(--pepsi-blue);
+      border: 1px solid #b3d1f0;
     }
 
     /* Contenedor del Gráfico de Dona Centrado */
     .chart-box {
-      width: 150px;
-      height: 120px;
+      width: 110px;
+      height: 110px;
       position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
     }
 
     /* Panel de Filtros */
@@ -353,11 +378,17 @@
       <div>
         <div class="kpi-title">Total Servicios Programados</div>
         <div class="kpi-value" id="kpi-total">0</div>
-        <div class="kpi-subtext" id="kpi-activos-sub">
-          <span style="color:#006100; font-weight:bold;">● Schop</span> | 
-          <span style="color:#004b93; font-weight:bold;">● Post Mix</span>
+        <!-- Desglose de Porcentajes en Badges Legibles -->
+        <div class="badge-pct-container">
+          <div class="badge-pct badge-schop">
+            <span>● Schop:</span> <span id="pct-schop-text">0%</span>
+          </div>
+          <div class="badge-pct badge-postmix">
+            <span>● Post Mix:</span> <span id="pct-postmix-text">0%</span>
+          </div>
         </div>
       </div>
+      <!-- Gráfico Centrado y Limpio -->
       <div class="chart-box">
         <canvas id="activosChart"></canvas>
       </div>
@@ -443,9 +474,6 @@
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHJUM26MwbPurx5FdJGQc-I-vlfwyEZYbPGeYE0F5HxEWpbMyhVeJpJKK7XjCD6No8RZCfeHgWaxZZ/pub?output=csv";
     let rawData = [];
     let activosChartInstance = null;
-
-    // Registrar el plugin de datalabels para mostrar textos sobre la dona
-    Chart.register(ChartDataLabels);
 
     $(document).ready(function() {
       $('.select2-filter').select2({
@@ -585,11 +613,18 @@
       const pctSI = grandTotal > 0 ? ((totalSI / grandTotal) * 100).toFixed(1) : '0.0';
       const pctNO = grandTotal > 0 ? ((totalNO / grandTotal) * 100).toFixed(1) : '0.0';
 
+      const pctSchopVal = grandTotal > 0 ? ((countSchop / grandTotal) * 100).toFixed(1) : '0.0';
+      const pctPostMixVal = grandTotal > 0 ? ((countPostMix / grandTotal) * 100).toFixed(1) : '0.0';
+
       document.getElementById('kpi-total').innerText = grandTotal.toLocaleString();
       document.getElementById('kpi-cumplimiento').innerText = pctSI + '%';
       document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Servicios Realizados`;
       document.getElementById('kpi-pendientes').innerText = pctNO + '%';
       document.getElementById('kpi-no-count').innerText = `${totalNO.toLocaleString()} Servicios Pendientes`;
+
+      // Actualizar textos de los Badges
+      document.getElementById('pct-schop-text').innerText = `${countSchop} (${pctSchopVal}%)`;
+      document.getElementById('pct-postmix-text').innerText = `${countPostMix} (${pctPostMixVal}%)`;
 
       renderActivosChart(countSchop, countPostMix);
       renderTabla1(data);
@@ -610,7 +645,6 @@
           labels: ['Schop', 'Post Mix'],
           datasets: [{
             data: [schop, postMix],
-            // Verde Excel para Schop y Azul Pepsi (#004b93) para Post Mix
             backgroundColor: ['#006100', '#004b93'],
             borderWidth: 2,
             borderColor: '#ffffff'
@@ -621,21 +655,6 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            // Etiquetas fijas visibles sobre el gráfico
-            datalabels: {
-              color: '#ffffff',
-              font: {
-                weight: 'bold',
-                size: 11
-              },
-              formatter: function(value, context) {
-                let total = schop + postMix;
-                if (total === 0 || value === 0) return '';
-                let pct = ((value / total) * 100).toFixed(1) + '%';
-                return pct;
-              }
-            },
-            // Detalle completo al pasar el cursor (Hover)
             tooltip: {
               enabled: true,
               callbacks: {
@@ -648,7 +667,7 @@
               }
             }
           },
-          cutout: '58%'
+          cutout: '62%'
         }
       });
     }
