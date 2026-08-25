@@ -247,7 +247,7 @@
       display: block;
     }
 
-    /* Estilos y efecto Zoom para las Fotos de Justificación */
+    /* Estilos y efecto Zoom para la columna AH (Foto Motivo) */
     .img-container {
       position: relative;
       display: inline-block;
@@ -270,8 +270,8 @@
       position: absolute;
       right: 0;
       top: -60px;
-      width: 200px;
-      height: 200px;
+      width: 220px;
+      height: 220px;
       z-index: 999;
       border-radius: 10px;
       border: 3px solid var(--excel-green-header);
@@ -281,7 +281,7 @@
     }
 
     .scrollable-table {
-      max-height: 400px;
+      max-height: 420px;
       overflow-y: auto;
     }
 
@@ -366,7 +366,7 @@
         <div id="tabla-1-container"></div>
       </div>
 
-      <!-- Nueva Tabla: Justificación Visita No Realizada -->
+      <!-- Tabla Justificación Visita No Realizada (Columna AH / AF / AG) -->
       <div class="table-container">
         <div class="table-header" style="background-color: #fff3f3; color: #c62828;">
           <span><i class="fa-solid fa-triangle-exclamation"></i> Justificación Visita No Realizada</span>
@@ -649,7 +649,7 @@
       document.getElementById('tabla-2-container').innerHTML = html2;
     }
 
-    /* Renderear Tabla de Visitas No Realizadas */
+    /* Renderear Tabla de Visitas No Realizadas leyendo exactamente la Columna AH (Foto Motivo) */
     function renderTablaNoRealizadas(data) {
       const noRealizadas = data.filter(d => {
         const realizada = (d['Realizada 2'] || d['Realizada'] || d['Cumplimiento'] || '').toUpperCase();
@@ -669,26 +669,27 @@
               <th class="left">Fecha</th>
               <th class="left">Cliente</th>
               <th class="left">Motivo No Servicio</th>
-              <th class="left">Comentario</th>
-              <th style="text-align:center;">Foto</th>
+              <th class="left">Comentario Motivo</th>
+              <th style="text-align:center;">Foto Motivo</th>
             </tr>
           </thead>
           <tbody>`;
 
       noRealizadas.forEach(d => {
-        const tec = d['Técnico'] || d['Tecnico'] || d['Usuario'] || '-';
-        const fecha = d['Fecha Realizado'] || d['Fecha Revisit'] || d['Fecha'] || '-';
-        const cliente = d['Nombre Receptor'] || d['Cliente'] || d['Oficina'] || '-';
-        const motivo = d['motivo_no_servicio'] || d['Motivo'] || d['Item Dañados C1'] || 'Sin Motivo Especificado';
-        const comentario = d['Comentario'] || d['comentario_no_servicio'] || '-';
+        const tec = d['Usuario'] || d['Técnico'] || d['Tecnico'] || '-';
+        const fecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || '-';
+        const cliente = d['Cliente'] || d['Nombre Receptor'] || d['Oficina'] || '-';
+        const motivo = d['Motivo No Servicio'] || d['motivo_no_servicio'] || 'Sin Especificar';
+        const comentario = d['Comentario Motivo'] || d['Comentario'] || '-';
         
-        const fotoUrl = d['Foto Columnas o Post Mix'] || d['Foto Salida FNE'] || d['Foto 1'] || d['Foto PM1'] || d['Foto PM2'] || '';
+        // Mapeo directo de la Columna AH ("Foto Motivo")
+        const fotoUrl = d['Foto Motivo'] || d['Foto Columnas o Post Mix'] || d['Foto Salida FNE'] || '';
 
         let fotoHtml = '<span style="color:#bbb;">Sin foto</span>';
         if (fotoUrl && fotoUrl.startsWith('http')) {
           fotoHtml = `
             <div class="img-container">
-              <img src="${fotoUrl}" class="thumb-img" alt="Foto Respaldo" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'">
+              <img src="${fotoUrl}" class="thumb-img" alt="Foto Motivo" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'">
             </div>`;
         }
 
