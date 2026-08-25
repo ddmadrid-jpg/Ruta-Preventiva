@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- jQuery, Select2, Flatpickr & Chart.js -->
+  <!-- jQuery, Select2, Flatpickr, Chart.js & DataLabels Plugin -->
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   
@@ -19,6 +19,7 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
   <style>
     :root {
@@ -28,6 +29,7 @@
       --excel-subtotal-gray: #6c757d;
       --excel-red-highlight: #ffc7ce;
       --excel-red-text: #9c0006;
+      --pepsi-blue: #004b93;
       --bg-gray: #f4f6f9;
       --card-bg: #ffffff;
       --primary-green: #2e7d32;
@@ -98,7 +100,8 @@
       flex-direction: row;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 20px;
+      padding: 12px 24px;
+      gap: 15px;
     }
 
     .kpi-card.alert {
@@ -126,10 +129,14 @@
       margin-top: 4px;
     }
 
+    /* Contenedor del Gráfico de Dona Centrado */
     .chart-box {
-      width: 130px;
-      height: 100px;
+      width: 150px;
+      height: 120px;
       position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     /* Panel de Filtros */
@@ -346,7 +353,10 @@
       <div>
         <div class="kpi-title">Total Servicios Programados</div>
         <div class="kpi-value" id="kpi-total">0</div>
-        <div class="kpi-subtext" id="kpi-activos-sub">Schop vs Post Mix</div>
+        <div class="kpi-subtext" id="kpi-activos-sub">
+          <span style="color:#006100; font-weight:bold;">● Schop</span> | 
+          <span style="color:#004b93; font-weight:bold;">● Post Mix</span>
+        </div>
       </div>
       <div class="chart-box">
         <canvas id="activosChart"></canvas>
@@ -373,7 +383,6 @@
       <select id="filter-mes" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
     </div>
 
-    <!-- Filtro por Rango de Fechas -->
     <div class="filter-group">
       <label for="filter-fecha-inicio"><i class="fa-regular fa-calendar-days"></i> Fecha Inicio</label>
       <input type="text" id="filter-fecha-inicio" class="date-input" placeholder="Seleccionar inicio...">
@@ -435,13 +444,15 @@
     let rawData = [];
     let activosChartInstance = null;
 
+    // Registrar el plugin de datalabels para mostrar textos sobre la dona
+    Chart.register(ChartDataLabels);
+
     $(document).ready(function() {
       $('.select2-filter').select2({
         placeholder: "Todos (filtrar...)",
         allowClear: true
       });
 
-      // Inicializar Calendarios Flatpickr
       flatpickr.localize(flatpickr.l10ns.es);
       flatpickr("#filter-fecha-inicio", {
         dateFormat: "Y-m-d",
@@ -599,7 +610,8 @@
           labels: ['Schop', 'Post Mix'],
           datasets: [{
             data: [schop, postMix],
-            backgroundColor: ['#006100', '#2e7d32'],
+            // Verde Excel para Schop y Azul Pepsi (#004b93) para Post Mix
+            backgroundColor: ['#006100', '#004b93'],
             borderWidth: 2,
             borderColor: '#ffffff'
           }]
@@ -609,18 +621,34 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
+            // Etiquetas fijas visibles sobre el gráfico
+            datalabels: {
+              color: '#ffffff',
+              font: {
+                weight: 'bold',
+                size: 11
+              },
+              formatter: function(value, context) {
+                let total = schop + postMix;
+                if (total === 0 || value === 0) return '';
+                let pct = ((value / total) * 100).toFixed(1) + '%';
+                return pct;
+              }
+            },
+            // Detalle completo al pasar el cursor (Hover)
             tooltip: {
+              enabled: true,
               callbacks: {
                 label: function(context) {
                   let total = schop + postMix;
                   let val = context.raw;
                   let pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-                  return `${context.label}: ${val} (${pct}%)`;
+                  return `${context.label}: ${val} servicios (${pct}%)`;
                 }
               }
             }
           },
-          cutout: '65%'
+          cutout: '58%'
         }
       });
     }
