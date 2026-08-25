@@ -95,14 +95,11 @@
       justify-content: center;
     }
 
-    /* Ajuste de alineación para pegar el gráfico a los datos */
     .kpi-card.chart-card {
       display: flex;
       flex-direction: row;
       align-items: center;
-      justify-content: flex-start;
       padding: 16px 24px;
-      gap: 30px;
     }
 
     .kpi-card.alert {
@@ -129,7 +126,7 @@
       margin-top: 6px;
     }
 
-    /* Contenedor del Gráfico de Dona Pegado */
+    /* Contenedor del Gráfico Centrado al Medio Exacto */
     .chart-box {
       width: 110px;
       height: 110px;
@@ -138,6 +135,8 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     /* Panel de Filtros */
@@ -359,7 +358,7 @@
           <span style="color:#004b93; font-weight:bold;">● Post Mix</span>
         </div>
       </div>
-      <!-- Gráfico Posicionado al lado de los datos -->
+      <!-- Gráfico Centrado -->
       <div class="chart-box">
         <canvas id="activosChart"></canvas>
       </div>
@@ -446,7 +445,6 @@
     let rawData = [];
     let activosChartInstance = null;
 
-    // Registrar el plugin de datalabels para aplicar borde negro
     Chart.register(ChartDataLabels);
 
     $(document).ready(function() {
@@ -622,7 +620,6 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            // Porcentajes legibles con contorno negro en negrita
             datalabels: {
               color: '#ffffff',
               textStrokeColor: '#000000',
