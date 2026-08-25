@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ruta Preventiva</title>
+  <style>
+    :root {
+      --excel-green-header: #006100;
+      --excel-green-dark: #004b00;
+      --excel-total-black: #000000;
+      --excel-subtotal-gray: #7f7f7f;
+      --excel-red-highlight: #ffc7ce;
+      --excel-red-text: #9c0006;
+      --bg-gray: #f4f6f8;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: var(--bg-gray);
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      color: var(--excel-green-dark);
+      margin-bottom: 20px;
+      font-size: 28px;
+    }
+
+    /* Panel de Filtros */
+    .filter-card {
+      background: #ffffff;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 25px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .filter-group label {
+      font-size: 12px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .filter-group select {
+      padding: 6px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    /* Grid de Tablas */
+    .dashboard-grid {
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    .table-container {
+      background: #ffffff;
+      border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 6px 12px;
+      text-align: right;
+      border: 1px solid #d9d9d9;
+    }
+
+    th.left, td.left {
+      text-align: left;
+    }
+
+    /* Encabezados Verde Excel */
+    thead tr:nth-child(1) th {
+      background-color: var(--excel-green-header);
+      color: #ffffff;
+      font-weight: bold;
+    }
+
+    thead tr:nth-child(2) th {
+      background-color: var(--excel-green-header);
+      color: #ffffff;
+      font-weight: bold;
+    }
+
+    /* Totales y Subtotales */
+    tr.subtotal {
+      background-color: var(--excel-subtotal-gray);
+      color: #ffffff;
+      font-weight: bold;
+    }
+
+    tr.total-general {
+      background-color: var(--excel-total-black);
+      color: #ffffff;
+      font-weight: bold;
+    }
+
+    /* Alerta de porcentaje crítico (< 80%) */
+    td.alert-red {
+      background-color: var(--excel-red-highlight);
+      color: var(--excel-red-text);
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Ruta Preventiva</h1>
+
+  <!-- Panel de Filtros -->
+  <div class="filter-card">
+    <div class="filter-group">
+      <label for="filter-mes">Mes</label>
+      <select id="filter-mes" onchange="renderTables()">
+        <option value="Todos">Todos</option>
+        <option value="Agosto" selected>Agosto</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="filter-semana">Semana</label>
+      <select id="filter-semana" onchange="renderTables()">
+        <option value="Todas" selected>(Todas)</option>
+        <option value="Semana 1">Semana 1</option>
+        <option value="Semana 2">Semana 2</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="filter-usuario">Usuario</label>
+      <select id="filter-usuario" onchange="renderTables()">
+        <option value="Todos" selected>Todos</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="filter-tecnico">Técnico</label>
+      <select id="filter-tecnico" onchange="renderTables()">
+        <option value="Todos" selected>Todos</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="filter-cliente">Cliente</label>
+      <select id="filter-cliente" onchange="renderTables()">
+        <option value="Todos" selected>Todos</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Contenedor de las dos tablas -->
+  <div class="dashboard-grid">
+    <div class="table-container" id="tabla-1-container"></div>
+    <div class="table-container" id="tabla-2-container"></div>
+  </div>
+
+  <script>
+    // Datos de prueba basados en tu estructura
+    const rawData = [
+      { mes: "Agosto", semana: "Semana 1", usuario: "STCYG01", tecnico: "Adán Gonzalez", cliente: "Bar A", tipoActivo: "Post Mix", realizada: "SI" },
+      { mes: "Agosto", semana: "Semana 1", usuario: "STCYG02", tecnico: "Enrique Aguilera", cliente: "Bar B", tipoActivo: "Post Mix", realizada: "SI" },
+      { mes: "Agosto", semana: "Semana 1", usuario: "STCYG02", tecnico: "Enrique Aguilera", cliente: "Bar C", tipoActivo: "Post Mix", realizada: "NO" },
+      { mes: "Agosto", semana: "Semana 1", usuario: "STCYG21", tecnico: "Gary Jofré", cliente: "Restaurante X", tipoActivo: "Schop", realizada: "SI" },
+      { mes: "Agosto", semana: "Semana 1", usuario: "STCYG34", tecnico: "Eugenio Caceres", cliente: "Pub Z", tipoActivo: "Hibrido", realizada: "NO" },
+      { mes: "Agosto", semana: "Semana 1", usuario: "STCYG34", tecnico: "Eugenio Caceres", cliente: "Pub Z", tipoActivo: "Hibrido", realizada: "SI" },
+      { mes: "Agosto", semana: "Semana 1", usuario: "STCYG34", tecnico: "Eugenio Caceres", cliente: "Pub Z", tipoActivo: "Hibrido", realizada: "SI" },
+      { mes: "Agosto", semana: "Semana 1", usuario: "STCYG34", tecnico: "Eugenio Caceres", cliente: "Pub Z", tipoActivo: "Hibrido", realizada: "SI" }
+    ];
+
+    function populateSelects() {
+      const usuarios = [...new Set(rawData.map(d => d.usuario))];
+      const tecnicos = [...new Set(rawData.map(d => d.tecnico))];
+      const clientes = [...new Set(rawData.map(d => d.cliente))];
+
+      const uSelect = document.getElementById('filter-usuario');
+      usuarios.forEach(u => uSelect.innerHTML += `<option value="${u}">${u}</option>`);
+
+      const tSelect = document.getElementById('filter-tecnico');
+      tecnicos.forEach(t => tSelect.innerHTML += `<option value="${t}">${t}</option>`);
+
+      const cSelect = document.getElementById('filter-cliente');
+      clientes.forEach(c => cSelect.innerHTML += `<option value="${c}">${c}</option>`);
+    }
+
+    function getFilteredData() {
+      const fMes = document.getElementById('filter-mes').value;
+      const fSemana = document.getElementById('filter-semana').value;
+      const fUsuario = document.getElementById('filter-usuario').value;
+      const fTecnico = document.getElementById('filter-tecnico').value;
+      const fCliente = document.getElementById('filter-cliente').value;
+
+      return rawData.filter(d => {
+        return (fMes === "Todos" || d.mes === fMes) &&
+               (fSemana === "Todas" || d.semana === fSemana) &&
+               (fUsuario === "Todos" || d.usuario === fUsuario) &&
+               (fTecnico === "Todos" || d.tecnico === fTecnico) &&
+               (fCliente === "Todos" || d.cliente === fCliente);
+      });
+    }
+
+    function renderTables() {
+      const data = getFilteredData();
+
+      // --- TABLA 1: Por Tipo de Activo ---
+      const t1Stats = {};
+      let total1_SI = 0, total1_NO = 0;
+
+      data.forEach(d => {
+        if(!t1Stats[d.tipoActivo]) t1Stats[d.tipoActivo] = { SI: 0, NO: 0 };
+        if(d.realizada === "SI") { t1Stats[d.tipoActivo].SI++; total1_SI++; }
+        else { t1Stats[d.tipoActivo].NO++; total1_NO++; }
+      });
+
+      let html1 = `
+        <table>
+          <thead>
+            <tr><th colspan="4" class="left">Suma de Servicios</th></tr>
+            <tr>
+              <th class="left">Tipo de Activo</th>
+              <th>NO</th>
+              <th>SI</th>
+              <th>Total general</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      Object.keys(t1Stats).forEach(tipo => {
+        const si = t1Stats[tipo].SI;
+        const no = t1Stats[tipo].NO;
+        const tot = si + no;
+        const pctNO = tot > 0 ? ((no / tot) * 100).toFixed(1) + '%' : '0.0%';
+        const pctSI = tot > 0 ? ((si / tot) * 100).toFixed(1) + '%' : '0.0%';
+
+        html1 += `
+          <tr>
+            <td class="left">${tipo}</td>
+            <td>${pctNO}</td>
+            <td>${pctSI}</td>
+            <td>100%</td>
+          </tr>`;
+      });
+
+      const tot1_ALL = total1_SI + total1_NO;
+      const pct1_NO = tot1_ALL > 0 ? ((total1_NO / tot1_ALL) * 100).toFixed(1) + '%' : '0.0%';
+      const pct1_SI = tot1_ALL > 0 ? ((total1_SI / tot1_ALL) * 100).toFixed(1) + '%' : '0.0%';
+
+      html1 += `
+        <tr class="total-general">
+          <td class="left">Total general</td>
+          <td>${pct1_NO}</td>
+          <td>${pct1_SI}</td>
+          <td>100%</td>
+        </tr>
+        </tbody></table>`;
+
+      document.getElementById('tabla-1-container').innerHTML = html1;
+
+      // --- TABLA 2: Desglosada por Categoria > Usuario > Tecnico ---
+      const t2Stats = {};
+      data.forEach(d => {
+        const cat = d.tipoActivo;
+        if(!t2Stats[cat]) t2Stats[cat] = {};
+        if(!t2Stats[cat][d.usuario]) t2Stats[cat][d.usuario] = { tecnico: d.tecnico, SI: 0, NO: 0 };
+        
+        if(d.realizada === "SI") t2Stats[cat][d.usuario].SI++;
+        else t2Stats[cat][d.usuario].NO++;
+      });
+
+      let html2 = `
+        <table>
+          <thead>
+            <tr><th colspan="6" class="left">Suma de Servicios</th></tr>
+            <tr>
+              <th class="left">Categoria</th>
+              <th class="left">Usuario</th>
+              <th class="left">Tecnico</th>
+              <th>NO</th>
+              <th>SI</th>
+              <th>Total general</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      Object.keys(t2Stats).forEach(cat => {
+        let catSI = 0, catNO = 0;
+        Object.keys(t2Stats[cat]).forEach(usr => {
+          const uData = t2Stats[cat][usr];
+          const tot = uData.SI + uData.NO;
+          catSI += uData.SI;
+          catNO += uData.NO;
+
+          const pctNO_num = tot > 0 ? (uData.NO / tot) * 100 : 0;
+          const pctNO = pctNO_num.toFixed(1) + '%';
+          const pctSI = tot > 0 ? ((uData.SI / tot) * 100).toFixed(1) + '%' : '0.0%';
+
+          // Resaltado en rojo si NO es mayor a 20%
+          const alertClass = pctNO_num > 20 ? 'alert-red' : '';
+
+          html2 += `
+            <tr>
+              <td class="left">• ${cat}</td>
+              <td class="left">• ${usr}</td>
+              <td class="left">${uData.tecnico}</td>
+              <td class="${alertClass}">${pctNO}</td>
+              <td>${pctSI}</td>
+              <td>100%</td>
+            </tr>`;
+        });
+
+        const catTot = catSI + catNO;
+        const catPctNO = catTot > 0 ? ((catNO / catTot) * 100).toFixed(1) + '%' : '0.0%';
+        const catPctSI = catTot > 0 ? ((catSI / catTot) * 100).toFixed(1) + '%' : '0.0%';
+
+        html2 += `
+          <tr class="subtotal">
+            <td colspan="3" class="left">Total ${cat}</td>
+            <td>${catPctNO}</td>
+            <td>${catPctSI}</td>
+            <td>100%</td>
+          </tr>`;
+      });
+
+      html2 += `
+        <tr class="total-general">
+          <td colspan="3" class="left">Total general</td>
+          <td>${pct1_NO}</td>
+          <td>${pct1_SI}</td>
+          <td>100%</td>
+        </tr>
+        </tbody></table>`;
+
+      document.getElementById('tabla-2-container').innerHTML = html2;
+    }
+
+    populateSelects();
+    renderTables();
+  </script>
+</body>
+</html>
