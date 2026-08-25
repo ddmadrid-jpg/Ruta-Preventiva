@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ruta Preventiva</title>
+
+  <!-- Estilos base -->
   <style>
     :root {
       --excel-green-header: #006100;
@@ -41,20 +43,22 @@
 
     .filter-card {
       background: #ffffff;
-      padding: 15px 20px;
+      padding: 20px;
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       margin-bottom: 25px;
       display: flex;
       flex-wrap: wrap;
-      gap: 15px;
-      align-items: center;
+      gap: 20px;
+      align-items: flex-start;
     }
 
     .filter-group {
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 6px;
+      min-width: 200px;
+      flex: 1;
     }
 
     .filter-group label {
@@ -63,11 +67,28 @@
       color: #333;
     }
 
-    .filter-group select {
-      padding: 6px 12px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 13px;
+    /* Personalización Select2 */
+    .select2-container--default .select2-selection--multiple {
+      border: 1px solid #ccc !important;
+      border-radius: 4px !important;
+      min-height: 38px !important;
+    }
+
+    .select2-container--default.select2-container--focus .select2-selection--multiple {
+      border-color: var(--excel-green-dark) !important;
+    }
+
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+      background-color: var(--excel-green-header) !important;
+      color: #ffffff !important;
+      border: none !important;
+      border-radius: 3px !important;
+      padding: 2px 8px !important;
+    }
+
+    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+      color: #ffffff !important;
+      margin-right: 5px !important;
     }
 
     .dashboard-grid {
@@ -124,6 +145,11 @@
       font-weight: bold;
     }
   </style>
+
+  <!-- jQuery & Select2 CSS / JS -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
 <body>
@@ -137,37 +163,27 @@
   <div class="filter-card">
     <div class="filter-group">
       <label for="filter-mes">Mes</label>
-      <select id="filter-mes" onchange="renderTables()">
-        <option value="Todos">Todos</option>
-      </select>
+      <select id="filter-mes" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
     </div>
 
     <div class="filter-group">
       <label for="filter-semana">Semana</label>
-      <select id="filter-semana" onchange="renderTables()">
-        <option value="Todas" selected>(Todas)</option>
-      </select>
+      <select id="filter-semana" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
     </div>
 
     <div class="filter-group">
       <label for="filter-usuario">Usuario</label>
-      <select id="filter-usuario" onchange="renderTables()">
-        <option value="Todos" selected>Todos</option>
-      </select>
+      <select id="filter-usuario" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
     </div>
 
     <div class="filter-group">
       <label for="filter-tecnico">Técnico</label>
-      <select id="filter-tecnico" onchange="renderTables()">
-        <option value="Todos" selected>Todos</option>
-      </select>
+      <select id="filter-tecnico" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
     </div>
 
     <div class="filter-group">
       <label for="filter-cliente">Cliente</label>
-      <select id="filter-cliente" onchange="renderTables()">
-        <option value="Todos" selected>Todos</option>
-      </select>
+      <select id="filter-cliente" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
     </div>
   </div>
 
@@ -179,6 +195,19 @@
   <script>
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHJUM26MwbPurx5FdJGQc-I-vlfwyEZYbPGeYE0F5HxEWpbMyhVeJpJKK7XjCD6No8RZCfeHgWaxZZ/pub?output=csv";
     let rawData = [];
+
+    $(document).ready(function() {
+      $('.select2-filter').select2({
+        placeholder: "Escribe o selecciona...",
+        allowClear: true
+      });
+
+      $('.select2-filter').on('change', function() {
+        renderTables();
+      });
+
+      loadSheetData();
+    });
 
     function loadSheetData() {
       Papa.parse(CSV_URL, {
@@ -213,13 +242,12 @@
       };
 
       const fillSelect = (id, keyNames) => {
-        const select = document.getElementById(id);
-        const currentVal = select.value;
-        select.innerHTML = '<option value="Todos">Todos</option>';
+        const select = $('#' + id);
+        select.empty();
         getUnique(keyNames).forEach(val => {
-          select.innerHTML += `<option value="${val}">${val}</option>`;
+          select.append(new Option(val, val, false, false));
         });
-        if (currentVal) select.value = currentVal;
+        select.trigger('change.select2');
       };
 
       fillSelect('filter-mes', ['Mes', 'mes']);
@@ -230,11 +258,11 @@
     }
 
     function getFilteredData() {
-      const fMes = document.getElementById('filter-mes').value;
-      const fSemana = document.getElementById('filter-semana').value;
-      const fUsuario = document.getElementById('filter-usuario').value;
-      const fTecnico = document.getElementById('filter-tecnico').value;
-      const fCliente = document.getElementById('filter-cliente').value;
+      const fMes = $('#filter-mes').val() || [];
+      const fSemana = $('#filter-semana').val() || [];
+      const fUsuario = $('#filter-usuario').val() || [];
+      const fTecnico = $('#filter-tecnico').val() || [];
+      const fCliente = $('#filter-cliente').val() || [];
 
       return rawData.filter(d => {
         const dMes = d['Mes'] || d['mes'];
@@ -243,11 +271,13 @@
         const dTecnico = d['Técnico'] || d['Tecnico'] || d['Jefe de Ventas'];
         const dCliente = d['Nombre Receptor'] || d['Cliente'] || d['Oficina'];
 
-        return (fMes === "Todos" || dMes === fMes) &&
-               (fSemana === "Todas" || dSemana === fSemana) &&
-               (fUsuario === "Todos" || dUsuario === fUsuario) &&
-               (fTecnico === "Todos" || dTecnico === fTecnico) &&
-               (fCliente === "Todos" || dCliente === fCliente);
+        const matchMes = fMes.length === 0 || fMes.includes(dMes);
+        const matchSemana = fSemana.length === 0 || fSemana.includes(dSemana);
+        const matchUsuario = fUsuario.length === 0 || fUsuario.includes(dUsuario);
+        const matchTecnico = fTecnico.length === 0 || fTecnico.includes(dTecnico);
+        const matchCliente = fCliente.length === 0 || fCliente.includes(dCliente);
+
+        return matchMes && matchSemana && matchUsuario && matchTecnico && matchCliente;
       });
     }
 
@@ -390,8 +420,6 @@
 
       document.getElementById('tabla-2-container').innerHTML = html2;
     }
-
-    loadSheetData();
   </script>
 </body>
 </html>
