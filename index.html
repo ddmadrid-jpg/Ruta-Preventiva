@@ -50,7 +50,7 @@
       align-items: center;
       margin-bottom: 20px;
       background: var(--card-bg);
-      padding: 16px 24px;
+      padding: 16px 28px;
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
@@ -58,10 +58,12 @@
     .header-title h1 {
       margin: 0;
       color: var(--excel-green-dark);
-      font-size: 24px;
+      font-size: 22px;
+      font-weight: 700;
       display: flex;
       align-items: center;
       gap: 10px;
+      letter-spacing: -0.3px;
     }
 
     .status-badge {
@@ -101,7 +103,6 @@
       align-items: center;
       justify-content: flex-start;
       padding: 16px 24px;
-      gap: 30px;
     }
 
     .kpi-card.alert {
@@ -128,18 +129,15 @@
       margin-top: 6px;
     }
 
-    /* Contenedor del Gráfico con Padding para evitar recortes */
     .chart-box {
-      width: 130px;
-      height: 110px;
+      width: 115px;
+      height: 115px;
       position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      margin-left: auto;
-      margin-right: auto;
-      padding: 5px;
+      margin-left: 45px;
     }
 
     /* Panel de Filtros */
@@ -203,6 +201,31 @@
     .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
       color: #ffffff !important;
       margin-right: 5px !important;
+    }
+
+    /* Tarjeta del Gráfico de Tendencia Mensual */
+    .trend-card {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 24px;
+    }
+
+    .trend-header {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--excel-green-dark);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .trend-chart-box {
+      width: 100%;
+      height: 180px;
+      position: relative;
     }
 
     /* Layout principal */
@@ -340,10 +363,10 @@
 </head>
 <body>
 
-  <!-- Encabezado -->
+  <!-- Encabezado Principal -->
   <div class="header-bar">
     <div class="header-title">
-      <h1><i class="fa-solid fa-chart-line"></i> Dashboard Ruta Preventiva</h1>
+      <h1><i class="fa-solid fa-chart-line" style="font-size: 20px; color: var(--primary-green);"></i> Dashboard Ruta Preventiva</h1>
     </div>
     <div class="status-badge" id="status-box">
       <i class="fa-solid fa-spinner fa-spin"></i> Cargando datos...
@@ -412,6 +435,16 @@
     </div>
   </div>
 
+  <!-- Nueva Sección: Tendencia Mensual de Cumplimiento -->
+  <div class="trend-card">
+    <div class="trend-header">
+      <i class="fa-solid fa-chart-column"></i> Tendencia de Cumplimiento Mensual (Servicios Realizados SI vs NO)
+    </div>
+    <div class="trend-chart-box">
+      <canvas id="trendChart"></canvas>
+    </div>
+  </div>
+
   <!-- Grid Principal -->
   <div class="dashboard-grid">
     
@@ -446,8 +479,11 @@
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHJUM26MwbPurx5FdJGQc-I-vlfwyEZYbPGeYE0F5HxEWpbMyhVeJpJKK7XjCD6No8RZCfeHgWaxZZ/pub?output=csv";
     let rawData = [];
     let activosChartInstance = null;
+    let trendChartInstance = null;
 
     Chart.register(ChartDataLabels);
+
+    const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
     $(document).ready(function() {
       $('.select2-filter').select2({
@@ -481,6 +517,10 @@
           rawData = results.data;
           document.getElementById('status-box').innerHTML = `<i class="fa-solid fa-circle-check"></i> Base Actualizada (${rawData.length} registros)`;
           populateSelects();
+          
+          // Establecer Mes Actual por defecto
+          setMesActualDefault();
+
           renderDashboard();
         },
         error: function(err) {
@@ -489,6 +529,20 @@
           document.getElementById('status-box').innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Error al conectar base`;
         }
       });
+    }
+
+    function setMesActualDefault() {
+      const currentMonthIndex = new Date().getMonth(); // 0 a 11
+      const currentMonthName = nombresMeses[currentMonthIndex];
+
+      const availableMonths = $('#filter-mes option').map(function() { return $(this).val(); }).get();
+
+      // Buscar coincidencia ignorando mayúsculas/minúsculas
+      const matchedMonth = availableMonths.find(m => m.toLowerCase() === currentMonthName.toLowerCase());
+
+      if (matchedMonth) {
+        $('#filter-mes').val([matchedMonth]).trigger('change.select2');
+      }
     }
 
     function populateSelects() {
@@ -510,7 +564,6 @@
         getUnique(keyNames).forEach(val => {
           select.append(new Option(val, val, false, false));
         });
-        select.trigger('change.select2');
       };
 
       fillSelect('filter-mes', ['Mes', 'mes']);
@@ -594,6 +647,7 @@
       document.getElementById('kpi-no-count').innerText = `${totalNO.toLocaleString()} Servicios Pendientes`;
 
       renderActivosChart(countSchop, countPostMix);
+      renderTrendChart();
       renderTabla1(data);
       renderTabla2(data);
       renderTablaNoRealizadas(data);
@@ -620,20 +674,14 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          layout: {
-            padding: 4
-          },
+          layout: { padding: 2 },
           plugins: {
             legend: { display: false },
-            // Porcentajes definidos y limpios
             datalabels: {
               color: '#ffffff',
               textStrokeColor: '#000000',
               textStrokeWidth: 2,
-              font: {
-                weight: 'bold',
-                size: 10
-              },
+              font: { weight: 'bold', size: 10 },
               formatter: function(value, context) {
                 let total = schop + postMix;
                 if (total === 0 || value === 0) return '';
@@ -653,7 +701,95 @@
               }
             }
           },
-          cutout: '52%'
+          cutout: '55%'
+        }
+      });
+    }
+
+    /* Gráfico de Barras de Tendencia Mensual (Construido sobre rawData global para ver la evolución) */
+    function renderTrendChart() {
+      const monthlyStats = {};
+
+      // Agrupar rawData por mes
+      rawData.forEach(d => {
+        const mes = d['Mes'] || d['mes'];
+        if (!mes) return;
+
+        const realizada = (d['Realizada 2'] || d['Realizada'] || d['Cumplimiento'] || '').toUpperCase();
+        if (!monthlyStats[mes]) monthlyStats[mes] = { SI: 0, NO: 0 };
+
+        if (realizada === "SI" || realizada === "1" || realizada === "EJECUTADA") monthlyStats[mes].SI++;
+        else monthlyStats[mes].NO++;
+      });
+
+      const labels = Object.keys(monthlyStats);
+      const dataSI = labels.map(m => monthlyStats[m].SI);
+      const dataNO = labels.map(m => monthlyStats[m].NO);
+
+      const ctx = document.getElementById('trendChart').getContext('2d');
+
+      if (trendChartInstance) {
+        trendChartInstance.destroy();
+      }
+
+      trendChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: '% Cumplimiento (SI)',
+              data: labels.map(m => {
+                const tot = monthlyStats[m].SI + monthlyStats[m].NO;
+                return tot > 0 ? ((monthlyStats[m].SI / tot) * 100).toFixed(1) : 0;
+              }),
+              backgroundColor: '#006100',
+              borderRadius: 4
+            },
+            {
+              label: '% No Realizados (NO)',
+              data: labels.map(m => {
+                const tot = monthlyStats[m].SI + monthlyStats[m].NO;
+                return tot > 0 ? ((monthlyStats[m].NO / tot) * 100).toFixed(1) : 0;
+              }),
+              backgroundColor: '#d32f2f',
+              borderRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { stacked: true },
+            y: {
+              stacked: true,
+              max: 100,
+              ticks: { callback: v => v + '%' }
+            }
+          },
+          plugins: {
+            legend: { position: 'top' },
+            datalabels: {
+              color: '#ffffff',
+              font: { weight: 'bold', size: 10 },
+              formatter: (v) => v > 5 ? v + '%' : ''
+            },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  const m = ctx.label;
+                  const cantSI = monthlyStats[m].SI;
+                  const cantNO = monthlyStats[m].NO;
+                  if (ctx.datasetIndex === 0) {
+                    return `SI: ${cantSI} servicios (${ctx.raw}%)`;
+                  } else {
+                    return `NO: ${cantNO} servicios (${ctx.raw}%)`;
+                  }
+                }
+              }
+            }
+          }
         }
       });
     }
