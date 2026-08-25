@@ -99,7 +99,9 @@
       display: flex;
       flex-direction: row;
       align-items: center;
+      justify-content: flex-start;
       padding: 16px 24px;
+      gap: 30px;
     }
 
     .kpi-card.alert {
@@ -126,9 +128,9 @@
       margin-top: 6px;
     }
 
-    /* Contenedor del Gráfico Centrado al Medio Exacto */
+    /* Contenedor del Gráfico con Padding para evitar recortes */
     .chart-box {
-      width: 110px;
+      width: 130px;
       height: 110px;
       position: relative;
       display: flex;
@@ -137,6 +139,7 @@
       flex-shrink: 0;
       margin-left: auto;
       margin-right: auto;
+      padding: 5px;
     }
 
     /* Panel de Filtros */
@@ -358,7 +361,6 @@
           <span style="color:#004b93; font-weight:bold;">● Post Mix</span>
         </div>
       </div>
-      <!-- Gráfico Centrado -->
       <div class="chart-box">
         <canvas id="activosChart"></canvas>
       </div>
@@ -618,15 +620,19 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          layout: {
+            padding: 4
+          },
           plugins: {
             legend: { display: false },
+            // Porcentajes definidos y limpios
             datalabels: {
               color: '#ffffff',
               textStrokeColor: '#000000',
-              textStrokeWidth: 3.5,
+              textStrokeWidth: 2,
               font: {
                 weight: 'bold',
-                size: 11
+                size: 10
               },
               formatter: function(value, context) {
                 let total = schop + postMix;
@@ -647,7 +653,7 @@
               }
             }
           },
-          cutout: '55%'
+          cutout: '52%'
         }
       });
     }
