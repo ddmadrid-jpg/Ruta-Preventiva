@@ -69,7 +69,7 @@
       gap: 6px;
     }
 
-    /* Tarjetas KPI Resumen Executivo */
+    /* Tarjetas KPI */
     .kpi-container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -159,12 +159,26 @@
       margin-right: 5px !important;
     }
 
-    /* Tablas */
+    /* Layout principal */
     .dashboard-grid {
       display: flex;
       gap: 24px;
       flex-wrap: wrap;
       align-items: flex-start;
+      margin-bottom: 24px;
+    }
+
+    .left-column {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      flex: 1;
+      min-width: 380px;
+    }
+
+    .right-column {
+      flex: 1.2;
+      min-width: 420px;
     }
 
     .table-container {
@@ -172,8 +186,6 @@
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
       overflow: hidden;
-      flex: 1;
-      min-width: 320px;
     }
 
     .table-header {
@@ -197,6 +209,7 @@
       padding: 8px 12px;
       text-align: right;
       border-bottom: 1px solid #eef0f2;
+      vertical-align: middle;
     }
 
     th.left, td.left {
@@ -232,6 +245,51 @@
       font-size: 11px;
       color: #666;
       display: block;
+    }
+
+    /* Estilos y efecto Zoom para las Fotos de Justificación */
+    .img-container {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 50px;
+    }
+
+    .thumb-img {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      transition: all 0.25s ease-in-out;
+      cursor: zoom-in;
+    }
+
+    .img-container:hover .thumb-img {
+      position: absolute;
+      right: 0;
+      top: -60px;
+      width: 200px;
+      height: 200px;
+      z-index: 999;
+      border-radius: 10px;
+      border: 3px solid var(--excel-green-header);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .scrollable-table {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .no-data {
+      padding: 20px;
+      text-align: center;
+      color: #888;
+      font-style: italic;
     }
   </style>
 </head>
@@ -294,21 +352,40 @@
     </div>
   </div>
 
-  <!-- Tablas Dinámicas -->
+  <!-- Grid Principal -->
   <div class="dashboard-grid">
-    <div class="table-container">
-      <div class="table-header">
-        <span>Resumen por Tipo de Activo</span>
+    
+    <!-- Columna Izquierda: Tabla Activos + Tabla Justificación No Realizadas -->
+    <div class="left-column">
+      
+      <!-- Tabla Resumen por Tipo de Activo -->
+      <div class="table-container">
+        <div class="table-header">
+          <span>Resumen por Tipo de Activo</span>
+        </div>
+        <div id="tabla-1-container"></div>
       </div>
-      <div id="tabla-1-container"></div>
+
+      <!-- Nueva Tabla: Justificación Visita No Realizada -->
+      <div class="table-container">
+        <div class="table-header" style="background-color: #fff3f3; color: #c62828;">
+          <span><i class="fa-solid fa-triangle-exclamation"></i> Justificación Visita No Realizada</span>
+        </div>
+        <div class="scrollable-table" id="tabla-no-realizadas-container"></div>
+      </div>
+
     </div>
 
-    <div class="table-container">
-      <div class="table-header">
-        <span>Desglose por Categoría y Técnico</span>
+    <!-- Columna Derecha: Desglose por Categoría y Técnico -->
+    <div class="right-column">
+      <div class="table-container">
+        <div class="table-header">
+          <span>Desglose por Categoría y Técnico</span>
+        </div>
+        <div id="tabla-2-container"></div>
       </div>
-      <div id="tabla-2-container"></div>
     </div>
+
   </div>
 
   <script>
@@ -424,6 +501,7 @@
 
       renderTabla1(data);
       renderTabla2(data);
+      renderTablaNoRealizadas(data);
     }
 
     function renderTabla1(data) {
@@ -569,6 +647,64 @@
         </tbody></table>`;
 
       document.getElementById('tabla-2-container').innerHTML = html2;
+    }
+
+    /* Renderear Tabla de Visitas No Realizadas */
+    function renderTablaNoRealizadas(data) {
+      const noRealizadas = data.filter(d => {
+        const realizada = (d['Realizada 2'] || d['Realizada'] || d['Cumplimiento'] || '').toUpperCase();
+        return realizada !== "SI" && realizada !== "1" && realizada !== "EJECUTADA";
+      });
+
+      if (noRealizadas.length === 0) {
+        document.getElementById('tabla-no-realizadas-container').innerHTML = `<div class="no-data">🎉 No hay visitas pendientes con los filtros seleccionados.</div>`;
+        return;
+      }
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th class="left">Técnico</th>
+              <th class="left">Fecha</th>
+              <th class="left">Cliente</th>
+              <th class="left">Motivo No Servicio</th>
+              <th class="left">Comentario</th>
+              <th style="text-align:center;">Foto</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      noRealizadas.forEach(d => {
+        const tec = d['Técnico'] || d['Tecnico'] || d['Usuario'] || '-';
+        const fecha = d['Fecha Realizado'] || d['Fecha Revisit'] || d['Fecha'] || '-';
+        const cliente = d['Nombre Receptor'] || d['Cliente'] || d['Oficina'] || '-';
+        const motivo = d['motivo_no_servicio'] || d['Motivo'] || d['Item Dañados C1'] || 'Sin Motivo Especificado';
+        const comentario = d['Comentario'] || d['comentario_no_servicio'] || '-';
+        
+        const fotoUrl = d['Foto Columnas o Post Mix'] || d['Foto Salida FNE'] || d['Foto 1'] || d['Foto PM1'] || d['Foto PM2'] || '';
+
+        let fotoHtml = '<span style="color:#bbb;">Sin foto</span>';
+        if (fotoUrl && fotoUrl.startsWith('http')) {
+          fotoHtml = `
+            <div class="img-container">
+              <img src="${fotoUrl}" class="thumb-img" alt="Foto Respaldo" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'">
+            </div>`;
+        }
+
+        html += `
+          <tr>
+            <td class="left"><strong>${tec}</strong></td>
+            <td class="left">${fecha}</td>
+            <td class="left">${cliente}</td>
+            <td class="left" style="color: #c62828; font-weight: 500;">${motivo}</td>
+            <td class="left" style="font-size: 11px; color: #555;">${comentario}</td>
+            <td style="text-align:center;">${fotoHtml}</td>
+          </tr>`;
+      });
+
+      html += `</tbody></table>`;
+      document.getElementById('tabla-no-realizadas-container').innerHTML = html;
     }
   </script>
 </body>
