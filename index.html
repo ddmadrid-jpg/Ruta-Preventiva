@@ -28,7 +28,17 @@
       font-size: 28px;
     }
 
-    /* Panel de Filtros */
+    .status-card {
+      background: #e8f5e9;
+      border: 1px solid #c8e6c9;
+      color: #2e7d32;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
     .filter-card {
       background: #ffffff;
       padding: 15px 20px;
@@ -60,7 +70,6 @@
       font-size: 13px;
     }
 
-    /* Grid de Tablas */
     .dashboard-grid {
       display: flex;
       gap: 30px;
@@ -91,20 +100,12 @@
       text-align: left;
     }
 
-    /* Encabezados Verde Excel */
-    thead tr:nth-child(1) th {
+    thead tr:nth-child(1) th, thead tr:nth-child(2) th {
       background-color: var(--excel-green-header);
       color: #ffffff;
       font-weight: bold;
     }
 
-    thead tr:nth-child(2) th {
-      background-color: var(--excel-green-header);
-      color: #ffffff;
-      font-weight: bold;
-    }
-
-    /* Totales y Subtotales */
     tr.subtotal {
       background-color: var(--excel-subtotal-gray);
       color: #ffffff;
@@ -117,25 +118,27 @@
       font-weight: bold;
     }
 
-    /* Alerta de porcentaje crítico (< 80%) */
     td.alert-red {
       background-color: var(--excel-red-highlight);
       color: var(--excel-red-text);
       font-weight: bold;
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
 <body>
 
   <h1>Ruta Preventiva</h1>
 
-  <!-- Panel de Filtros -->
+  <div class="status-card" id="status-box">
+    🔄 Cargando datos directamente desde Google Sheets...
+  </div>
+
   <div class="filter-card">
     <div class="filter-group">
       <label for="filter-mes">Mes</label>
       <select id="filter-mes" onchange="renderTables()">
         <option value="Todos">Todos</option>
-        <option value="Agosto" selected>Agosto</option>
       </select>
     </div>
 
@@ -143,8 +146,6 @@
       <label for="filter-semana">Semana</label>
       <select id="filter-semana" onchange="renderTables()">
         <option value="Todas" selected>(Todas)</option>
-        <option value="Semana 1">Semana 1</option>
-        <option value="Semana 2">Semana 2</option>
       </select>
     </div>
 
@@ -170,38 +171,62 @@
     </div>
   </div>
 
-  <!-- Contenedor de las dos tablas -->
   <div class="dashboard-grid">
     <div class="table-container" id="tabla-1-container"></div>
     <div class="table-container" id="tabla-2-container"></div>
   </div>
 
   <script>
-    // Datos de prueba basados en tu estructura
-    const rawData = [
-      { mes: "Agosto", semana: "Semana 1", usuario: "STCYG01", tecnico: "Adán Gonzalez", cliente: "Bar A", tipoActivo: "Post Mix", realizada: "SI" },
-      { mes: "Agosto", semana: "Semana 1", usuario: "STCYG02", tecnico: "Enrique Aguilera", cliente: "Bar B", tipoActivo: "Post Mix", realizada: "SI" },
-      { mes: "Agosto", semana: "Semana 1", usuario: "STCYG02", tecnico: "Enrique Aguilera", cliente: "Bar C", tipoActivo: "Post Mix", realizada: "NO" },
-      { mes: "Agosto", semana: "Semana 1", usuario: "STCYG21", tecnico: "Gary Jofré", cliente: "Restaurante X", tipoActivo: "Schop", realizada: "SI" },
-      { mes: "Agosto", semana: "Semana 1", usuario: "STCYG34", tecnico: "Eugenio Caceres", cliente: "Pub Z", tipoActivo: "Hibrido", realizada: "NO" },
-      { mes: "Agosto", semana: "Semana 1", usuario: "STCYG34", tecnico: "Eugenio Caceres", cliente: "Pub Z", tipoActivo: "Hibrido", realizada: "SI" },
-      { mes: "Agosto", semana: "Semana 1", usuario: "STCYG34", tecnico: "Eugenio Caceres", cliente: "Pub Z", tipoActivo: "Hibrido", realizada: "SI" },
-      { mes: "Agosto", semana: "Semana 1", usuario: "STCYG34", tecnico: "Eugenio Caceres", cliente: "Pub Z", tipoActivo: "Hibrido", realizada: "SI" }
-    ];
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHJUM26MwbPurx5FdJGQc-I-vlfwyEZYbPGeYE0F5HxEWpbMyhVeJpJKK7XjCD6No8RZCfeHgWaxZZ/pub?output=csv";
+    let rawData = [];
+
+    function loadSheetData() {
+      Papa.parse(CSV_URL, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          rawData = results.data;
+          document.getElementById('status-box').innerHTML = `✅ Conectado a la base de datos (${rawData.length} registros cargados).`;
+          populateSelects();
+          renderTables();
+        },
+        error: function(err) {
+          document.getElementById('status-box').style.background = "#f8d7da";
+          document.getElementById('status-box').style.color = "#721c24";
+          document.getElementById('status-box').innerHTML = "❌ Error al cargar los datos desde Google Sheets.";
+        }
+      });
+    }
 
     function populateSelects() {
-      const usuarios = [...new Set(rawData.map(d => d.usuario))];
-      const tecnicos = [...new Set(rawData.map(d => d.tecnico))];
-      const clientes = [...new Set(rawData.map(d => d.cliente))];
+      if (rawData.length === 0) return;
 
-      const uSelect = document.getElementById('filter-usuario');
-      usuarios.forEach(u => uSelect.innerHTML += `<option value="${u}">${u}</option>`);
+      const getUnique = (keyNames) => {
+        let values = [];
+        rawData.forEach(d => {
+          for (let k of keyNames) {
+            if (d[k]) { values.push(d[k]); break; }
+          }
+        });
+        return [...new Set(values.filter(Boolean))].sort();
+      };
 
-      const tSelect = document.getElementById('filter-tecnico');
-      tecnicos.forEach(t => tSelect.innerHTML += `<option value="${t}">${t}</option>`);
+      const fillSelect = (id, keyNames) => {
+        const select = document.getElementById(id);
+        const currentVal = select.value;
+        select.innerHTML = '<option value="Todos">Todos</option>';
+        getUnique(keyNames).forEach(val => {
+          select.innerHTML += `<option value="${val}">${val}</option>`;
+        });
+        if (currentVal) select.value = currentVal;
+      };
 
-      const cSelect = document.getElementById('filter-cliente');
-      clientes.forEach(c => cSelect.innerHTML += `<option value="${c}">${c}</option>`);
+      fillSelect('filter-mes', ['Mes', 'mes']);
+      fillSelect('filter-semana', ['Semana', 'semana']);
+      fillSelect('filter-usuario', ['Usuario', 'STCYG', 'usuario']);
+      fillSelect('filter-tecnico', ['Técnico', 'Tecnico', 'Jefe de Ventas', 'tecnico']);
+      fillSelect('filter-cliente', ['Nombre Receptor', 'Cliente', 'cliente', 'Oficina']);
     }
 
     function getFilteredData() {
@@ -212,25 +237,34 @@
       const fCliente = document.getElementById('filter-cliente').value;
 
       return rawData.filter(d => {
-        return (fMes === "Todos" || d.mes === fMes) &&
-               (fSemana === "Todas" || d.semana === fSemana) &&
-               (fUsuario === "Todos" || d.usuario === fUsuario) &&
-               (fTecnico === "Todos" || d.tecnico === fTecnico) &&
-               (fCliente === "Todos" || d.cliente === fCliente);
+        const dMes = d['Mes'] || d['mes'];
+        const dSemana = d['Semana'] || d['semana'];
+        const dUsuario = d['Usuario'] || d['usuario'];
+        const dTecnico = d['Técnico'] || d['Tecnico'] || d['Jefe de Ventas'];
+        const dCliente = d['Nombre Receptor'] || d['Cliente'] || d['Oficina'];
+
+        return (fMes === "Todos" || dMes === fMes) &&
+               (fSemana === "Todas" || dSemana === fSemana) &&
+               (fUsuario === "Todos" || dUsuario === fUsuario) &&
+               (fTecnico === "Todos" || dTecnico === fTecnico) &&
+               (fCliente === "Todos" || dCliente === fCliente);
       });
     }
 
     function renderTables() {
       const data = getFilteredData();
 
-      // --- TABLA 1: Por Tipo de Activo ---
+      // --- TABLA 1 ---
       const t1Stats = {};
       let total1_SI = 0, total1_NO = 0;
 
       data.forEach(d => {
-        if(!t1Stats[d.tipoActivo]) t1Stats[d.tipoActivo] = { SI: 0, NO: 0 };
-        if(d.realizada === "SI") { t1Stats[d.tipoActivo].SI++; total1_SI++; }
-        else { t1Stats[d.tipoActivo].NO++; total1_NO++; }
+        const tipo = d['Tipo de Activo'] || d['Activos'] || d['Categoria'] || 'Post Mix';
+        const realizada = (d['Realizada 2'] || d['Realizada'] || d['Cumplimiento'] || '').toUpperCase();
+
+        if(!t1Stats[tipo]) t1Stats[tipo] = { SI: 0, NO: 0 };
+        if(realizada === "SI" || realizada === "1" || realizada === "EJECUTADA") { t1Stats[tipo].SI++; total1_SI++; }
+        else { t1Stats[tipo].NO++; total1_NO++; }
       });
 
       let html1 = `
@@ -277,15 +311,19 @@
 
       document.getElementById('tabla-1-container').innerHTML = html1;
 
-      // --- TABLA 2: Desglosada por Categoria > Usuario > Tecnico ---
+      // --- TABLA 2 ---
       const t2Stats = {};
       data.forEach(d => {
-        const cat = d.tipoActivo;
+        const cat = d['Tipo de Activo'] || d['Activos'] || d['Categoria'] || 'Post Mix';
+        const usr = d['Usuario'] || 'Sin Usuario';
+        const tec = d['Técnico'] || d['Tecnico'] || d['Jefe de Ventas'] || 'Sin Técnico';
+        const realizada = (d['Realizada 2'] || d['Realizada'] || d['Cumplimiento'] || '').toUpperCase();
+
         if(!t2Stats[cat]) t2Stats[cat] = {};
-        if(!t2Stats[cat][d.usuario]) t2Stats[cat][d.usuario] = { tecnico: d.tecnico, SI: 0, NO: 0 };
+        if(!t2Stats[cat][usr]) t2Stats[cat][usr] = { tecnico: tec, SI: 0, NO: 0 };
         
-        if(d.realizada === "SI") t2Stats[cat][d.usuario].SI++;
-        else t2Stats[cat][d.usuario].NO++;
+        if(realizada === "SI" || realizada === "1" || realizada === "EJECUTADA") t2Stats[cat][usr].SI++;
+        else t2Stats[cat][usr].NO++;
       });
 
       let html2 = `
@@ -315,7 +353,6 @@
           const pctNO = pctNO_num.toFixed(1) + '%';
           const pctSI = tot > 0 ? ((uData.SI / tot) * 100).toFixed(1) + '%' : '0.0%';
 
-          // Resaltado en rojo si NO es mayor a 20%
           const alertClass = pctNO_num > 20 ? 'alert-red' : '';
 
           html2 += `
@@ -354,8 +391,7 @@
       document.getElementById('tabla-2-container').innerHTML = html2;
     }
 
-    populateSelects();
-    renderTables();
+    loadSheetData();
   </script>
 </body>
 </html>
