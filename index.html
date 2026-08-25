@@ -3,53 +3,123 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ruta Preventiva</title>
+  <title>Ruta Preventiva - Dashboard Ejecutivo</title>
 
-  <!-- Estilos base -->
+  <!-- Google Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- jQuery & Select2 CSS / JS -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
   <style>
     :root {
       --excel-green-header: #006100;
       --excel-green-dark: #004b00;
-      --excel-total-black: #000000;
-      --excel-subtotal-gray: #7f7f7f;
+      --excel-total-black: #1a1a1a;
+      --excel-subtotal-gray: #6c757d;
       --excel-red-highlight: #ffc7ce;
       --excel-red-text: #9c0006;
-      --bg-gray: #f4f6f8;
+      --bg-gray: #f4f6f9;
+      --card-bg: #ffffff;
+      --primary-green: #2e7d32;
     }
 
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Roboto', sans-serif;
       background-color: var(--bg-gray);
       margin: 0;
-      padding: 20px;
+      padding: 24px;
+      color: #333;
     }
 
-    h1 {
+    /* Encabezado Principal */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      background: var(--card-bg);
+      padding: 16px 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .header-title h1 {
+      margin: 0;
       color: var(--excel-green-dark);
-      margin-bottom: 20px;
-      font-size: 28px;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    .status-card {
+    .status-badge {
       background: #e8f5e9;
-      border: 1px solid #c8e6c9;
-      color: #2e7d32;
-      padding: 10px 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
+      color: var(--primary-green);
+      padding: 6px 14px;
+      border-radius: 20px;
       font-size: 13px;
-      font-weight: bold;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
+    /* Tarjetas KPI Resumen Executivo */
+    .kpi-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--card-bg);
+      padding: 18px 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border-left: 5px solid var(--excel-green-header);
+    }
+
+    .kpi-card.alert {
+      border-left-color: #d32f2f;
+    }
+
+    .kpi-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #666;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-size: 26px;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+
+    .kpi-subtext {
+      font-size: 12px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    /* Panel de Filtros */
     .filter-card {
-      background: #ffffff;
+      background: var(--card-bg);
       padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      margin-bottom: 25px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 24px;
       display: flex;
       flex-wrap: wrap;
-      gap: 20px;
+      gap: 16px;
       align-items: flex-start;
     }
 
@@ -57,32 +127,30 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      min-width: 200px;
+      min-width: 180px;
       flex: 1;
     }
 
     .filter-group label {
       font-size: 12px;
       font-weight: bold;
-      color: #333;
+      color: #444;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    /* Personalización Select2 */
     .select2-container--default .select2-selection--multiple {
-      border: 1px solid #ccc !important;
-      border-radius: 4px !important;
+      border: 1px solid #dcdfe6 !important;
+      border-radius: 6px !important;
       min-height: 38px !important;
-    }
-
-    .select2-container--default.select2-container--focus .select2-selection--multiple {
-      border-color: var(--excel-green-dark) !important;
     }
 
     .select2-container--default .select2-selection--multiple .select2-selection__choice {
       background-color: var(--excel-green-header) !important;
       color: #ffffff !important;
       border: none !important;
-      border-radius: 3px !important;
+      border-radius: 4px !important;
       padding: 2px 8px !important;
     }
 
@@ -91,18 +159,32 @@
       margin-right: 5px !important;
     }
 
+    /* Tablas */
     .dashboard-grid {
       display: flex;
-      gap: 30px;
+      gap: 24px;
       flex-wrap: wrap;
       align-items: flex-start;
     }
 
     .table-container {
-      background: #ffffff;
-      border-radius: 4px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
       overflow: hidden;
+      flex: 1;
+      min-width: 320px;
+    }
+
+    .table-header {
+      padding: 14px 18px;
+      background: #f8f9fa;
+      border-bottom: 1px solid #e9ecef;
+      font-weight: 700;
+      color: var(--excel-green-dark);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     table {
@@ -112,24 +194,25 @@
     }
 
     th, td {
-      padding: 6px 12px;
+      padding: 8px 12px;
       text-align: right;
-      border: 1px solid #d9d9d9;
+      border-bottom: 1px solid #eef0f2;
     }
 
     th.left, td.left {
       text-align: left;
     }
 
-    thead tr:nth-child(1) th, thead tr:nth-child(2) th {
+    thead tr th {
       background-color: var(--excel-green-header);
       color: #ffffff;
-      font-weight: bold;
+      font-weight: 600;
+      font-size: 12px;
     }
 
     tr.subtotal {
-      background-color: var(--excel-subtotal-gray);
-      color: #ffffff;
+      background-color: #f1f3f5;
+      color: #212529;
       font-weight: bold;
     }
 
@@ -144,52 +227,88 @@
       color: var(--excel-red-text);
       font-weight: bold;
     }
-  </style>
 
-  <!-- jQuery & Select2 CSS / JS -->
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    .qty-badge {
+      font-size: 11px;
+      color: #666;
+      display: block;
+    }
+  </style>
 </head>
 <body>
 
-  <h1>Ruta Preventiva</h1>
-
-  <div class="status-card" id="status-box">
-    🔄 Cargando datos directamente desde Google Sheets...
+  <!-- Encabezado -->
+  <div class="header-bar">
+    <div class="header-title">
+      <h1><i class="fa-solid fa-chart-line"></i> Dashboard Ruta Preventiva</h1>
+    </div>
+    <div class="status-badge" id="status-box">
+      <i class="fa-solid fa-spinner fa-spin"></i> Cargando datos...
+    </div>
   </div>
 
+  <!-- Tarjetas KPI -->
+  <div class="kpi-container">
+    <div class="kpi-card">
+      <div class="kpi-title">Total Servicios Programados</div>
+      <div class="kpi-value" id="kpi-total">0</div>
+      <div class="kpi-subtext">Registros analizados</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Cumplimiento Global</div>
+      <div class="kpi-value" id="kpi-cumplimiento">0%</div>
+      <div class="kpi-subtext" id="kpi-ejecutados-count">0 Ejecutadas</div>
+    </div>
+    <div class="kpi-card alert">
+      <div class="kpi-title">Visitas No Realizadas</div>
+      <div class="kpi-value" id="kpi-pendientes">0%</div>
+      <div class="kpi-subtext" id="kpi-no-count">0 Pendientes</div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
   <div class="filter-card">
     <div class="filter-group">
-      <label for="filter-mes">Mes</label>
+      <label for="filter-mes"><i class="fa-regular fa-calendar"></i> Mes</label>
       <select id="filter-mes" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
     </div>
 
     <div class="filter-group">
-      <label for="filter-semana">Semana</label>
+      <label for="filter-semana"><i class="fa-solid fa-calendar-week"></i> Semana</label>
       <select id="filter-semana" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
     </div>
 
     <div class="filter-group">
-      <label for="filter-usuario">Usuario</label>
+      <label for="filter-usuario"><i class="fa-solid fa-id-badge"></i> Usuario</label>
       <select id="filter-usuario" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
     </div>
 
     <div class="filter-group">
-      <label for="filter-tecnico">Técnico</label>
+      <label for="filter-tecnico"><i class="fa-solid fa-user-gear"></i> Técnico</label>
       <select id="filter-tecnico" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
     </div>
 
     <div class="filter-group">
-      <label for="filter-cliente">Cliente</label>
+      <label for="filter-cliente"><i class="fa-solid fa-store"></i> Cliente / Oficina</label>
       <select id="filter-cliente" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
     </div>
   </div>
 
+  <!-- Tablas Dinámicas -->
   <div class="dashboard-grid">
-    <div class="table-container" id="tabla-1-container"></div>
-    <div class="table-container" id="tabla-2-container"></div>
+    <div class="table-container">
+      <div class="table-header">
+        <span>Resumen por Tipo de Activo</span>
+      </div>
+      <div id="tabla-1-container"></div>
+    </div>
+
+    <div class="table-container">
+      <div class="table-header">
+        <span>Desglose por Categoría y Técnico</span>
+      </div>
+      <div id="tabla-2-container"></div>
+    </div>
   </div>
 
   <script>
@@ -198,12 +317,12 @@
 
     $(document).ready(function() {
       $('.select2-filter').select2({
-        placeholder: "Escribe o selecciona...",
+        placeholder: "Todos (filtrar...)",
         allowClear: true
       });
 
       $('.select2-filter').on('change', function() {
-        renderTables();
+        renderDashboard();
       });
 
       loadSheetData();
@@ -216,14 +335,14 @@
         skipEmptyLines: true,
         complete: function(results) {
           rawData = results.data;
-          document.getElementById('status-box').innerHTML = `✅ Conectado a la base de datos (${rawData.length} registros cargados).`;
+          document.getElementById('status-box').innerHTML = `<i class="fa-solid fa-circle-check"></i> Base Actualizada (${rawData.length} registros)`;
           populateSelects();
-          renderTables();
+          renderDashboard();
         },
         error: function(err) {
-          document.getElementById('status-box').style.background = "#f8d7da";
-          document.getElementById('status-box').style.color = "#721c24";
-          document.getElementById('status-box').innerHTML = "❌ Error al cargar los datos desde Google Sheets.";
+          document.getElementById('status-box').style.background = "#ffebee";
+          document.getElementById('status-box').style.color = "#c62828";
+          document.getElementById('status-box').innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Error al conectar base`;
         }
       });
     }
@@ -281,10 +400,33 @@
       });
     }
 
-    function renderTables() {
+    function renderDashboard() {
       const data = getFilteredData();
 
-      // --- TABLA 1 ---
+      let totalSI = 0;
+      let totalNO = 0;
+
+      data.forEach(d => {
+        const realizada = (d['Realizada 2'] || d['Realizada'] || d['Cumplimiento'] || '').toUpperCase();
+        if (realizada === "SI" || realizada === "1" || realizada === "EJECUTADA") totalSI++;
+        else totalNO++;
+      });
+
+      const grandTotal = totalSI + totalNO;
+      const pctSI = grandTotal > 0 ? ((totalSI / grandTotal) * 100).toFixed(1) : '0.0';
+      const pctNO = grandTotal > 0 ? ((totalNO / grandTotal) * 100).toFixed(1) : '0.0';
+
+      document.getElementById('kpi-total').innerText = grandTotal.toLocaleString();
+      document.getElementById('kpi-cumplimiento').innerText = pctSI + '%';
+      document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Servicios Realizados`;
+      document.getElementById('kpi-pendientes').innerText = pctNO + '%';
+      document.getElementById('kpi-no-count').innerText = `${totalNO.toLocaleString()} Servicios Pendientes`;
+
+      renderTabla1(data);
+      renderTabla2(data);
+    }
+
+    function renderTabla1(data) {
       const t1Stats = {};
       let total1_SI = 0, total1_NO = 0;
 
@@ -300,12 +442,11 @@
       let html1 = `
         <table>
           <thead>
-            <tr><th colspan="4" class="left">Suma de Servicios</th></tr>
             <tr>
               <th class="left">Tipo de Activo</th>
-              <th>NO</th>
-              <th>SI</th>
-              <th>Total general</th>
+              <th>NO (Cant. / %)</th>
+              <th>SI (Cant. / %)</th>
+              <th>Total Servicios</th>
             </tr>
           </thead>
           <tbody>`;
@@ -319,10 +460,10 @@
 
         html1 += `
           <tr>
-            <td class="left">${tipo}</td>
-            <td>${pctNO}</td>
-            <td>${pctSI}</td>
-            <td>100%</td>
+            <td class="left"><strong>${tipo}</strong></td>
+            <td>${no} <span class="qty-badge">(${pctNO})</span></td>
+            <td>${si} <span class="qty-badge">(${pctSI})</span></td>
+            <td><strong>${tot}</strong> <span class="qty-badge">(100%)</span></td>
           </tr>`;
       });
 
@@ -332,16 +473,17 @@
 
       html1 += `
         <tr class="total-general">
-          <td class="left">Total general</td>
-          <td>${pct1_NO}</td>
-          <td>${pct1_SI}</td>
-          <td>100%</td>
+          <td class="left">Total General</td>
+          <td>${total1_NO} (${pct1_NO})</td>
+          <td>${total1_SI} (${pct1_SI})</td>
+          <td>${tot1_ALL} (100%)</td>
         </tr>
         </tbody></table>`;
 
       document.getElementById('tabla-1-container').innerHTML = html1;
+    }
 
-      // --- TABLA 2 ---
+    function renderTabla2(data) {
       const t2Stats = {};
       data.forEach(d => {
         const cat = d['Tipo de Activo'] || d['Activos'] || d['Categoria'] || 'Post Mix';
@@ -359,17 +501,18 @@
       let html2 = `
         <table>
           <thead>
-            <tr><th colspan="6" class="left">Suma de Servicios</th></tr>
             <tr>
-              <th class="left">Categoria</th>
+              <th class="left">Categoría</th>
               <th class="left">Usuario</th>
-              <th class="left">Tecnico</th>
-              <th>NO</th>
-              <th>SI</th>
-              <th>Total general</th>
+              <th class="left">Técnico</th>
+              <th>NO (Cant. / %)</th>
+              <th>SI (Cant. / %)</th>
+              <th>Total Servicios</th>
             </tr>
           </thead>
           <tbody>`;
+
+      let grandNO = 0, grandSI = 0;
 
       Object.keys(t2Stats).forEach(cat => {
         let catSI = 0, catNO = 0;
@@ -390,11 +533,14 @@
               <td class="left">• ${cat}</td>
               <td class="left">• ${usr}</td>
               <td class="left">${uData.tecnico}</td>
-              <td class="${alertClass}">${pctNO}</td>
-              <td>${pctSI}</td>
-              <td>100%</td>
+              <td class="${alertClass}">${uData.NO} <span class="qty-badge">(${pctNO})</span></td>
+              <td>${uData.SI} <span class="qty-badge">(${pctSI})</span></td>
+              <td><strong>${tot}</strong> <span class="qty-badge">(100%)</span></td>
             </tr>`;
         });
+
+        grandSI += catSI;
+        grandNO += catNO;
 
         const catTot = catSI + catNO;
         const catPctNO = catTot > 0 ? ((catNO / catTot) * 100).toFixed(1) + '%' : '0.0%';
@@ -403,18 +549,22 @@
         html2 += `
           <tr class="subtotal">
             <td colspan="3" class="left">Total ${cat}</td>
-            <td>${catPctNO}</td>
-            <td>${catPctSI}</td>
-            <td>100%</td>
+            <td>${catNO} (${catPctNO})</td>
+            <td>${catSI} (${catPctSI})</td>
+            <td>${catTot} (100%)</td>
           </tr>`;
       });
 
+      const grandALL = grandSI + grandNO;
+      const grandPctNO = grandALL > 0 ? ((grandNO / grandALL) * 100).toFixed(1) + '%' : '0.0%';
+      const grandPctSI = grandALL > 0 ? ((grandSI / grandALL) * 100).toFixed(1) + '%' : '0.0%';
+
       html2 += `
         <tr class="total-general">
-          <td colspan="3" class="left">Total general</td>
-          <td>${pct1_NO}</td>
-          <td>${pct1_SI}</td>
-          <td>100%</td>
+          <td colspan="3" class="left">Total General</td>
+          <td>${grandNO} (${grandPctNO})</td>
+          <td>${grandSI} (${grandPctSI})</td>
+          <td>${grandALL} (100%)</td>
         </tr>
         </tbody></table>`;
 
