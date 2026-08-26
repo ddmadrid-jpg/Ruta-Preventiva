@@ -413,9 +413,10 @@
       <select id="filter-usuario" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
     </div>
 
+    <!-- Nuevo Filtro: Local / ID CCU -->
     <div class="filter-group">
-      <label for="filter-tecnico"><i class="fa-solid fa-user-gear"></i> Técnico</label>
-      <select id="filter-tecnico" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
+      <label for="filter-local-id"><i class="fa-solid fa-hashtag"></i> Local / ID CCU</label>
+      <select id="filter-local-id" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
     </div>
 
     <div class="filter-group">
@@ -497,9 +498,7 @@
           document.getElementById('status-box').innerHTML = `<i class="fa-solid fa-circle-check"></i> Base Actualizada (${rawData.length} registros)`;
           populateSelects();
           
-          // Seleccionar mes actual por defecto
           setMesActualDefault();
-
           renderDashboard();
         },
         error: function(err) {
@@ -545,7 +544,7 @@
 
       fillSelect('filter-mes', ['Mes', 'mes']);
       fillSelect('filter-usuario', ['Usuario', 'STCYG', 'usuario']);
-      fillSelect('filter-tecnico', ['Técnico', 'Tecnico', 'Jefe de Ventas', 'tecnico']);
+      fillSelect('filter-local-id', ['Local', 'ID CCU', 'ID', 'Id CCU']);
       fillSelect('filter-cliente', ['Nombre de Fantasia', 'Nombre Fantasia', 'Nombre Receptor', 'Cliente', 'cliente', 'Oficina']);
     }
 
@@ -565,7 +564,7 @@
       const fInicioStr = $('#filter-fecha-inicio').val();
       const fFinStr = $('#filter-fecha-fin').val();
       const fUsuario = $('#filter-usuario').val() || [];
-      const fTecnico = $('#filter-tecnico').val() || [];
+      const fLocalId = $('#filter-local-id').val() || [];
       const fCliente = $('#filter-cliente').val() || [];
 
       const fInicio = fInicioStr ? new Date(fInicioStr) : null;
@@ -574,15 +573,20 @@
       return rawData.filter(d => {
         const dMes = d['Mes'] || d['mes'];
         const dUsuario = d['Usuario'] || d['usuario'];
-        const dTecnico = d['Técnico'] || d['Tecnico'] || d['Jefe de Ventas'];
-        const dCliente = d['Nombre de Fantasia'] || d['Nombre Fantasia'] || d['Nombre Receptor'] || d['Cliente'] || d['Oficina'];
+        const dLocal = d['Local'] || '';
+        const dIdCCU = d['ID CCU'] || d['ID'] || d['Id CCU'] || '';
+        const dCliente = d['Nombre de Fantasia'] || d['Nombre Fantasia'] || d['Nombre Receptor'] || d['Cliente'] || d['Oficina'] || '';
         
         const rawFecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'];
         const dFecha = parseDate(rawFecha);
 
         const matchMes = fMes.length === 0 || fMes.includes(dMes);
         const matchUsuario = fUsuario.length === 0 || fUsuario.includes(dUsuario);
-        const matchTecnico = fTecnico.length === 0 || fTecnico.includes(dTecnico);
+        
+        // Coincidencia para Local o ID CCU
+        const matchLocalId = fLocalId.length === 0 || fLocalId.includes(dLocal) || fLocalId.includes(dIdCCU);
+
+        // Coincidencia para Cliente (Acepta selección múltiple de variantes como "Rey de la Michealda", "Rey de las Cachapas", etc.)
         const matchCliente = fCliente.length === 0 || fCliente.includes(dCliente);
 
         let matchFecha = true;
@@ -591,7 +595,7 @@
           if (fFin && dFecha > fFin) matchFecha = false;
         }
 
-        return matchMes && matchUsuario && matchTecnico && matchCliente && matchFecha;
+        return matchMes && matchUsuario && matchLocalId && matchCliente && matchFecha;
       });
     }
 
@@ -969,4 +973,3 @@
   </script>
 </body>
 </html>
-
