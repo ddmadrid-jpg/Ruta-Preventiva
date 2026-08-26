@@ -682,6 +682,13 @@
       cliente: { selected: [], searchText: "" }
     };
 
+    // Función auxiliar para obtener la cantidad numérica de servicios de la Columna G ("Servicios")
+    function getServiciosQty(d) {
+      const val = d['Servicios'] || d['servicios'] || d['SERVICIOS'] || d['Cant'] || d['Cantidad'];
+      const num = parseInt(val, 10);
+      return isNaN(num) ? 1 : num;
+    }
+
     $(document).ready(function() {
       flatpickr.localize(flatpickr.l10ns.es);
       flatpickr("#filter-fecha-inicio", { dateFormat: "Y-m-d", onChange: renderDashboard });
@@ -706,7 +713,7 @@
         e.stopPropagation();
       });
 
-      // Evento de búsqueda interna en el filtro
+      // Búsqueda interna en el filtro
       $('.gs-search-input').on('keyup', function() {
         const query = $(this).val().toLowerCase();
         const $list = $(this).closest('.gs-dropdown').find('.gs-options-list');
@@ -716,7 +723,7 @@
         });
       });
 
-      // Botón "Seleccionar filtrados": Marca coincidencias, guarda texto, cierra desplegable y actualiza
+      // Botón "Seleccionar filtrados"
       $('.btn-select-filtered').on('click', function() {
         const $group = $(this).closest('.filter-group');
         const filterKey = $group.data('filter');
@@ -724,7 +731,6 @@
 
         $group.find('.gs-option-item:visible input[type="checkbox"]').prop('checked', true);
 
-        // Guardar valores seleccionados
         const selected = [];
         $group.find('.gs-options-list input[type="checkbox"]:checked').each(function() {
           selected.push($(this).val());
@@ -738,7 +744,7 @@
         renderDashboard();
       });
 
-      // Botón "Borrar": Desmarca todo
+      // Botón "Borrar"
       $('.btn-clear-all').on('click', function() {
         const $group = $(this).closest('.filter-group');
         $group.find('.gs-options-list input[type="checkbox"]').prop('checked', false);
@@ -772,7 +778,6 @@
       loadSheetData();
     });
 
-    // Actualiza la casilla externa con el Embudo, número de seleccionados y texto buscado
     function updateFilterBoxUI($group, filterKey) {
       const state = filtersState[filterKey];
       const count = state.selected.length;
@@ -920,13 +925,21 @@
       let countPostMix = 0;
 
       data.forEach(d => {
+        const qty = getServiciosQty(d); // SUMA DE CANTIDAD DE SERVICIOS
         const realizada = (d['Realizada 2'] || d['Realizada'] || d['Cumplimiento'] || '').toUpperCase();
-        if (realizada === "SI" || realizada === "1" || realizada === "EJECUTADA") totalSI++;
-        else totalNO++;
+        
+        if (realizada === "SI" || realizada === "1" || realizada === "EJECUTADA") {
+          totalSI += qty;
+        } else {
+          totalNO += qty;
+        }
 
         const tipo = (d['Tipo de Activo'] || d['Activos'] || d['Categoria'] || '').toUpperCase();
-        if (tipo.includes('SCHOP')) countSchop++;
-        else if (tipo.includes('POST')) countPostMix++;
+        if (tipo.includes('SCHOP')) {
+          countSchop += qty;
+        } else if (tipo.includes('POST')) {
+          countPostMix += qty;
+        }
       });
 
       const grandTotal = totalSI + totalNO;
@@ -1006,11 +1019,15 @@
         const mes = d['Mes'] || d['mes'];
         if (!mes) return;
 
+        const qty = getServiciosQty(d); // SUMA DE CANTIDAD DE SERVICIOS
         const realizada = (d['Realizada 2'] || d['Realizada'] || d['Cumplimiento'] || '').toUpperCase();
         if (!monthlyStats[mes]) monthlyStats[mes] = { SI: 0, NO: 0 };
 
-        if (realizada === "SI" || realizada === "1" || realizada === "EJECUTADA") monthlyStats[mes].SI++;
-        else monthlyStats[mes].NO++;
+        if (realizada === "SI" || realizada === "1" || realizada === "EJECUTADA") {
+          monthlyStats[mes].SI += qty;
+        } else {
+          monthlyStats[mes].NO += qty;
+        }
       });
 
       const labels = Object.keys(monthlyStats);
@@ -1081,12 +1098,18 @@
       let total1_SI = 0, total1_NO = 0;
 
       data.forEach(d => {
+        const qty = getServiciosQty(d); // SUMA DE CANTIDAD DE SERVICIOS
         const tipo = d['Tipo de Activo'] || d['Activos'] || d['Categoria'] || 'Post Mix';
         const realizada = (d['Realizada 2'] || d['Realizada'] || d['Cumplimiento'] || '').toUpperCase();
 
         if(!t1Stats[tipo]) t1Stats[tipo] = { SI: 0, NO: 0 };
-        if(realizada === "SI" || realizada === "1" || realizada === "EJECUTADA") { t1Stats[tipo].SI++; total1_SI++; }
-        else { t1Stats[tipo].NO++; total1_NO++; }
+        if(realizada === "SI" || realizada === "1" || realizada === "EJECUTADA") {
+          t1Stats[tipo].SI += qty;
+          total1_SI += qty;
+        } else {
+          t1Stats[tipo].NO += qty;
+          total1_NO += qty;
+        }
       });
 
       let html1 = `
@@ -1136,6 +1159,7 @@
     function renderTabla2(data) {
       const t2Stats = {};
       data.forEach(d => {
+        const qty = getServiciosQty(d); // SUMA DE CANTIDAD DE SERVICIOS
         const cat = d['Tipo de Activo'] || d['Activos'] || d['Categoria'] || 'Post Mix';
         const usr = d['Usuario'] || 'Sin Usuario';
         const tec = d['Técnico'] || d['Tecnico'] || d['Jefe de Ventas'] || 'Sin Técnico';
@@ -1144,8 +1168,11 @@
         if(!t2Stats[cat]) t2Stats[cat] = {};
         if(!t2Stats[cat][usr]) t2Stats[cat][usr] = { tecnico: tec, SI: 0, NO: 0 };
         
-        if(realizada === "SI" || realizada === "1" || realizada === "EJECUTADA") t2Stats[cat][usr].SI++;
-        else t2Stats[cat][usr].NO++;
+        if(realizada === "SI" || realizada === "1" || realizada === "EJECUTADA") {
+          t2Stats[cat][usr].SI += qty;
+        } else {
+          t2Stats[cat][usr].NO += qty;
+        }
       });
 
       let html2 = `
