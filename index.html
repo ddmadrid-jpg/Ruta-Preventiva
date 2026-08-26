@@ -383,7 +383,6 @@
       <div class="kpi-subtext" id="kpi-no-count" style="color: #888;">0 Pendientes</div>
     </div>
 
-    <!-- 4ta Tarjeta: Mini Tendencia Mensual SI vs NO -->
     <div class="kpi-card" style="border-left-color: var(--pepsi-blue);">
       <div class="kpi-title"><i class="fa-solid fa-chart-column"></i> Evolución Mensual (% SI)</div>
       <div class="mini-trend-box">
@@ -420,7 +419,7 @@
     </div>
 
     <div class="filter-group">
-      <label for="filter-cliente"><i class="fa-solid fa-store"></i> Cliente / Oficina</label>
+      <label for="filter-cliente"><i class="fa-solid fa-store"></i> Cliente</label>
       <select id="filter-cliente" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
     </div>
   </div>
@@ -547,7 +546,7 @@
       fillSelect('filter-mes', ['Mes', 'mes']);
       fillSelect('filter-usuario', ['Usuario', 'STCYG', 'usuario']);
       fillSelect('filter-tecnico', ['Técnico', 'Tecnico', 'Jefe de Ventas', 'tecnico']);
-      fillSelect('filter-cliente', ['Nombre Receptor', 'Cliente', 'cliente', 'Oficina']);
+      fillSelect('filter-cliente', ['Nombre de Fantasia', 'Nombre Fantasia', 'Nombre Receptor', 'Cliente', 'cliente', 'Oficina']);
     }
 
     function parseDate(dateStr) {
@@ -576,7 +575,7 @@
         const dMes = d['Mes'] || d['mes'];
         const dUsuario = d['Usuario'] || d['usuario'];
         const dTecnico = d['Técnico'] || d['Tecnico'] || d['Jefe de Ventas'];
-        const dCliente = d['Nombre Receptor'] || d['Cliente'] || d['Oficina'];
+        const dCliente = d['Nombre de Fantasia'] || d['Nombre Fantasia'] || d['Nombre Receptor'] || d['Cliente'] || d['Oficina'];
         
         const rawFecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'];
         const dFecha = parseDate(rawFecha);
@@ -684,7 +683,6 @@
       });
     }
 
-    /* Mini Gráfico de Tendencia Integrado con textos más grandes (12px) y legibles */
     function renderTrendChart() {
       const monthlyStats = {};
 
@@ -819,7 +817,6 @@
       document.getElementById('tabla-1-container').innerHTML = html1;
     }
 
-    /* Renderear Tabla 2 Ordenada de Menor a Mayor por Usuario con Alerta Roja para SI < 92% */
     function renderTabla2(data) {
       const t2Stats = {};
       data.forEach(d => {
@@ -854,7 +851,6 @@
       Object.keys(t2Stats).forEach(cat => {
         let catSI = 0, catNO = 0;
         
-        // Ordenar usuarios de menor a mayor (STCYG01, STCYG02, etc.)
         const usuariosOrdenados = Object.keys(t2Stats[cat]).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
         usuariosOrdenados.forEach(usr => {
@@ -869,7 +865,6 @@
           const pctNO = pctNO_num.toFixed(1) + '%';
           const pctSI = pctSI_num.toFixed(1) + '%';
 
-          // Alerta roja si el cumplimiento SI es menor al 92%
           const alertClass = pctSI_num < 92 ? 'alert-red' : '';
 
           html2 += `
@@ -943,7 +938,7 @@
       noRealizadas.forEach(d => {
         const tec = d['Usuario'] || d['Técnico'] || d['Tecnico'] || '-';
         const fecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || '-';
-        const cliente = d['Cliente'] || d['Nombre Receptor'] || d['Oficina'] || '-';
+        const cliente = d['Nombre de Fantasia'] || d['Nombre Fantasia'] || d['Cliente'] || d['Nombre Receptor'] || d['Oficina'] || '-';
         const motivo = d['Motivo No Servicio'] || d['motivo_no_servicio'] || 'Sin Especificar';
         const comentario = d['Comentario Motivo'] || d['Comentario'] || '-';
         
