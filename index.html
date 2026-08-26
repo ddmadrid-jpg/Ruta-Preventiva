@@ -185,30 +185,54 @@
       outline: none;
       background: #ffffff;
       color: #333;
+      height: 38px;
+      box-sizing: border-box;
     }
 
     .date-input:focus {
       border-color: var(--excel-green-dark);
     }
 
-    /* Estilos Estilo Excel para Select2 (Checkboxes + Selección Múltiple) */
+    /* Ajuste Fijo para Evitar Crecimiento Vertical (Cajón Fijo de 1 Línea) */
     .select2-container--default .select2-selection--multiple {
       border: 1px solid #dcdfe6 !important;
       border-radius: 6px !important;
-      min-height: 38px !important;
+      height: 38px !important;
+      max-height: 38px !important;
+      overflow: hidden !important;
+      padding: 4px 8px !important;
+      box-sizing: border-box !important;
+    }
+
+    .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+      display: flex !important;
+      align-items: center !important;
+      height: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
     }
 
     .select2-container--default .select2-selection--multiple .select2-selection__choice {
-      background-color: var(--excel-green-header) !important;
-      color: #ffffff !important;
-      border: none !important;
-      border-radius: 4px !important;
-      padding: 2px 8px !important;
+      display: none !important; /* Oculta los tags individuales que agrandan la caja */
     }
 
-    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
-      color: #ffffff !important;
-      margin-right: 5px !important;
+    /* Resumen Compacto tipo Excel con Ícono de Embudo */
+    .custom-filter-summary {
+      font-size: 13px;
+      color: var(--excel-green-dark);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .custom-filter-summary i.fa-filter {
+      color: var(--excel-green-header);
+      font-size: 12px;
     }
 
     .select2-results__option {
@@ -219,7 +243,6 @@
       gap: 8px !important;
     }
 
-    /* Checkbox visual tipo Excel */
     .select2-results__option::before {
       content: "";
       display: inline-block;
@@ -443,7 +466,7 @@
     </div>
   </div>
 
-  <!-- Filtros Estilo Excel (Checkboxes + Selección masiva) -->
+  <!-- Filtros Estilo Excel -->
   <div class="filter-card">
     <div class="filter-group">
       <label for="filter-mes"><i class="fa-regular fa-calendar"></i> Mes</label>
@@ -523,6 +546,12 @@
         closeOnSelect: false
       });
 
+      // Actualizar resumen en texto para no sobrecargar visualmente el cajón
+      $('.select2-filter').on('change', function() {
+        updateFilterDisplay($(this));
+        renderDashboard();
+      });
+
       // Añadir encabezado con botón "Seleccionar filtrados" tipo Excel
       $('.select2-filter').on('select2:open', function() {
         const selectId = $(this).attr('id');
@@ -538,7 +567,6 @@
         }, 10);
       });
 
-      // Manejar clics de selección masiva
       $(document).on('click', '.btn-select-all', function() {
         const targetId = $(this).data('target');
         const $select = $('#' + targetId);
@@ -556,14 +584,12 @@
         const currentVal = $select.val() || [];
         const newVal = [...new Set([...currentVal, ...visibleOptions])];
         $select.val(newVal).trigger('change.select2');
-        renderDashboard();
       });
 
       $(document).on('click', '.btn-clear-all', function() {
         const targetId = $(this).data('target');
         const $select = $('#' + targetId);
         $select.val([]).trigger('change.select2');
-        renderDashboard();
       });
 
       flatpickr.localize(flatpickr.l10ns.es);
@@ -576,12 +602,21 @@
         onChange: function() { renderDashboard(); }
       });
 
-      $('.select2-filter').on('change', function() {
-        renderDashboard();
-      });
-
       loadSheetData();
     });
+
+    function updateFilterDisplay($select) {
+      const selectedValues = $select.val() || [];
+      const $container = $select.next('.select2-container').find('.select2-selection__rendered');
+      
+      $container.find('.custom-filter-summary').remove();
+
+      if (selectedValues.length === 1) {
+        $container.append(`<span class="custom-filter-summary"><i class="fa-solid fa-filter"></i> ${selectedValues[0]}</span>`);
+      } else if (selectedValues.length > 1) {
+        $container.append(`<span class="custom-filter-summary"><i class="fa-solid fa-filter"></i> ${selectedValues.length} seleccionados</span>`);
+      }
+    }
 
     function loadSheetData() {
       Papa.parse(CSV_URL, {
