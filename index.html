@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ruta Preventiva - Dashboard Ejecutivo</title>
+  <title>Dashboard Ejecutivo - Servicio Técnico</title>
 
   <!-- Google Fonts & Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -46,10 +46,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
       background: var(--card-bg);
       padding: 16px 28px;
-      border-radius: 12px;
+      border-radius: 12px 12px 0 0;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
@@ -74,6 +74,41 @@
       display: flex;
       align-items: center;
       gap: 6px;
+    }
+
+    /* Navegación por Pestañas (Tabs) */
+    .dashboard-tabs {
+      display: flex;
+      background: var(--card-bg);
+      padding: 0 28px;
+      border-radius: 0 0 12px 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.03);
+      border-top: 1px solid #eee;
+    }
+
+    .tab-btn {
+      padding: 14px 24px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #666;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--excel-green-dark);
+    }
+
+    .tab-btn.active {
+      color: var(--excel-green-dark);
+      border-bottom-color: var(--excel-green-header);
     }
 
     /* Tarjetas KPI (4 Columnas) */
@@ -188,7 +223,7 @@
       box-sizing: border-box;
     }
 
-    /* Estilo del Componente de Filtro Estilo Google Sheets */
+    /* Componente de Filtro Estilo Google Sheets */
     .gs-filter-box {
       border: 1px solid #dcdfe6;
       border-radius: 6px;
@@ -233,7 +268,6 @@
       font-weight: bold;
     }
 
-    /* Pop-up Desplegable Tipo Google Sheets */
     .gs-dropdown {
       position: absolute;
       top: 100%;
@@ -486,11 +520,24 @@
   <!-- Encabezado Principal -->
   <div class="header-bar">
     <div class="header-title">
-      <h1><i class="fa-solid fa-chart-line" style="font-size: 20px; color: var(--primary-green);"></i> Dashboard Ruta Preventiva</h1>
+      <h1 id="main-title"><i class="fa-solid fa-chart-line" style="font-size: 20px; color: var(--primary-green);"></i> Dashboard Ruta Preventiva</h1>
     </div>
     <div class="status-badge" id="status-box">
       <i class="fa-solid fa-spinner fa-spin"></i> Cargando datos...
     </div>
+  </div>
+
+  <!-- Navegación por Pestañas -->
+  <div class="dashboard-tabs">
+    <button class="tab-btn active" data-sheet="preventiva">
+      <i class="fa-solid fa-calendar-check"></i> Ruta Preventiva
+    </button>
+    <button class="tab-btn" data-sheet="urgencias">
+      <i class="fa-solid fa-truck-medical"></i> Urgencias
+    </button>
+    <button class="tab-btn" data-sheet="ejecuciones">
+      <i class="fa-solid fa-gears"></i> Ejecuciones
+    </button>
   </div>
 
   <!-- Tarjetas KPI (4 Columnas) -->
@@ -636,7 +683,6 @@
 
   <!-- Grid Principal -->
   <div class="dashboard-grid">
-    
     <div class="left-column">
       <div class="table-container">
         <div class="table-header">
@@ -661,11 +707,17 @@
         <div id="tabla-2-container"></div>
       </div>
     </div>
-
   </div>
 
   <script>
-    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHJUM26MwbPurx5FdJGQc-I-vlfwyEZYbPGeYE0F5HxEWpbMyhVeJpJKK7XjCD6No8RZCfeHgWaxZZ/pub?output=csv";
+    // URLs de los Libros de Google Sheets
+    const SHEETS_URLS = {
+      preventiva: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHJUM26MwbPurx5FdJGQc-I-vlfwyEZYbPGeYE0F5HxEWpbMyhVeJpJKK7XjCD6No8RZCfeHgWaxZZ/pub?output=csv",
+      urgencias: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCPxgn4nE-_F6MiufT8QXIyr8DWUunt_-X-Ig1qlyMlnjpl23XOPdxNNrQi_f8TLFcV2zGDyfGF2eG/pub?output=csv",
+      ejecuciones: "" // Disponible para agregar en el futuro
+    };
+
+    let currentSheetKey = "preventiva";
     let rawData = [];
     let activosChartInstance = null;
     let trendChartInstance = null;
@@ -674,13 +726,28 @@
 
     const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
-    // Objeto global de estado de filtros
-    const filtersState = {
+    let filtersState = {
       mes: { selected: [], searchText: "" },
       usuario: { selected: [], searchText: "" },
       localId: { selected: [], searchText: "" },
       cliente: { selected: [], searchText: "" }
     };
+
+    function resetFiltersState() {
+      filtersState = {
+        mes: { selected: [], searchText: "" },
+        usuario: { selected: [], searchText: "" },
+        localId: { selected: [], searchText: "" },
+        cliente: { selected: [], searchText: "" }
+      };
+      $('.filter-group').find('.gs-search-input').val('');
+      $('#filter-fecha-inicio').val('');
+      $('#filter-fecha-fin').val('');
+      $('.filter-group').each(function() {
+        const key = $(this).data('filter');
+        if (key) updateFilterBoxUI($(this), key);
+      });
+    }
 
     function getServiciosQty(d) {
       const val = d['Servicios'] || d['servicios'] || d['SERVICIOS'] || d['Cant'] || d['Cantidad'];
@@ -693,7 +760,33 @@
       flatpickr("#filter-fecha-inicio", { dateFormat: "Y-m-d", onChange: renderDashboard });
       flatpickr("#filter-fecha-fin", { dateFormat: "Y-m-d", onChange: renderDashboard });
 
-      // Abrir/Cerrar Pop-up de Filtro
+      // Cambio de Pestañas
+      $('.tab-btn').on('click', function() {
+        const targetSheet = $(this).data('sheet');
+        
+        if (targetSheet === "ejecuciones" && !SHEETS_URLS.ejecuciones) {
+          alert("La hoja de Ejecuciones estará disponible próximamente.");
+          return;
+        }
+
+        $('.tab-btn').removeClass('active');
+        $(this).addClass('active');
+
+        currentSheetKey = targetSheet;
+
+        // Actualizar Título
+        const titles = {
+          preventiva: '<i class="fa-solid fa-chart-line" style="font-size: 20px; color: var(--primary-green);"></i> Dashboard Ruta Preventiva',
+          urgencias: '<i class="fa-solid fa-truck-medical" style="font-size: 20px; color: #d32f2f;"></i> Dashboard Urgencias Atendidas',
+          ejecuciones: '<i class="fa-solid fa-gears" style="font-size: 20px; color: var(--pepsi-blue);"></i> Dashboard Ejecuciones'
+        };
+        $('#main-title').html(titles[currentSheetKey]);
+
+        resetFiltersState();
+        loadSheetData();
+      });
+
+      // Pop-up Filtros
       $('.gs-filter-box').on('click', function(e) {
         e.stopPropagation();
         const $group = $(this).closest('.filter-group');
@@ -708,11 +801,8 @@
         }
       });
 
-      $('.gs-dropdown').on('click', function(e) {
-        e.stopPropagation();
-      });
+      $('.gs-dropdown').on('click', function(e) { e.stopPropagation(); });
 
-      // Búsqueda interna en el filtro
       $('.gs-search-input').on('keyup', function() {
         const query = $(this).val().toLowerCase();
         const $list = $(this).closest('.gs-dropdown').find('.gs-options-list');
@@ -722,7 +812,6 @@
         });
       });
 
-      // Botón "Seleccionar filtrados"
       $('.btn-select-filtered').on('click', function() {
         const $group = $(this).closest('.filter-group');
         const filterKey = $group.data('filter');
@@ -743,19 +832,16 @@
         renderDashboard();
       });
 
-      // Botón "Borrar"
       $('.btn-clear-all').on('click', function() {
         const $group = $(this).closest('.filter-group');
         $group.find('.gs-options-list input[type="checkbox"]').prop('checked', false);
         $group.find('.gs-search-input').val('').trigger('keyup');
       });
 
-      // Botón "Cancelar"
       $('.gs-btn-cancel').on('click', function() {
         $(this).closest('.gs-dropdown').removeClass('show');
       });
 
-      // Botón "Aceptar"
       $('.gs-btn-accept').on('click', function() {
         const $group = $(this).closest('.filter-group');
         const filterKey = $group.data('filter');
@@ -801,7 +887,11 @@
     }
 
     function loadSheetData() {
-      Papa.parse(CSV_URL, {
+      const targetUrl = SHEETS_URLS[currentSheetKey];
+
+      document.getElementById('status-box').innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Cargando base...`;
+
+      Papa.parse(targetUrl, {
         download: true,
         header: true,
         skipEmptyLines: true,
@@ -833,7 +923,6 @@
         return [...new Set(values.filter(Boolean))].sort();
       };
 
-      // Extractor especial para combinar Local e ID CCU en una sola lista
       const getUniqueLocalAndCCU = () => {
         let values = [];
         rawData.forEach(d => {
@@ -914,8 +1003,6 @@
 
         const matchMes = fMes.length === 0 || fMes.includes(dMes);
         const matchUsuario = fUsuario.length === 0 || fUsuario.includes(dUsuario);
-        
-        // Coincidencia para Local o ID CCU
         const matchLocalId = fLocalId.length === 0 || fLocalId.includes(dLocal) || fLocalId.includes(dIdCCU);
         const matchCliente = fCliente.length === 0 || fCliente.includes(dCliente);
 
