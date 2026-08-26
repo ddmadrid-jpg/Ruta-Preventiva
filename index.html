@@ -238,7 +238,7 @@
       position: absolute;
       top: 100%;
       left: 0;
-      width: 260px;
+      width: 280px;
       background: #ffffff;
       border: 1px solid #ccc;
       border-radius: 8px;
@@ -682,7 +682,6 @@
       cliente: { selected: [], searchText: "" }
     };
 
-    // Función auxiliar para obtener la cantidad numérica de servicios de la Columna G ("Servicios")
     function getServiciosQty(d) {
       const val = d['Servicios'] || d['servicios'] || d['SERVICIOS'] || d['Cant'] || d['Cantidad'];
       const num = parseInt(val, 10);
@@ -828,18 +827,30 @@
         let values = [];
         rawData.forEach(d => {
           for (let k of keyNames) {
-            if (d[k]) { values.push(d[k]); break; }
+            if (d[k]) { values.push(String(d[k]).trim()); break; }
           }
         });
         return [...new Set(values.filter(Boolean))].sort();
       };
 
-      const fillFilterUI = (filterKey, keyNames) => {
+      // Extractor especial para combinar Local e ID CCU en una sola lista
+      const getUniqueLocalAndCCU = () => {
+        let values = [];
+        rawData.forEach(d => {
+          const loc = d['Local'] || d['local'];
+          const ccu = d['ID CCU'] || d['ID'] || d['Id CCU'] || d['id_ccu'];
+          if (loc) values.push(String(loc).trim());
+          if (ccu) values.push(String(ccu).trim());
+        });
+        return [...new Set(values.filter(Boolean))].sort();
+      };
+
+      const fillFilterUI = (filterKey, valuesArray) => {
         const $group = $(`.filter-group[data-filter="${filterKey}"]`);
         const $list = $group.find('.gs-options-list');
         $list.empty();
 
-        getUnique(keyNames).forEach((val, idx) => {
+        valuesArray.forEach((val, idx) => {
           $list.append(`
             <label class="gs-option-item">
               <input type="checkbox" value="${val}" id="${filterKey}-${idx}">
@@ -849,10 +860,10 @@
         });
       };
 
-      fillFilterUI('mes', ['Mes', 'mes']);
-      fillFilterUI('usuario', ['Usuario', 'STCYG', 'usuario']);
-      fillFilterUI('localId', ['Local', 'ID CCU', 'ID', 'Id CCU']);
-      fillFilterUI('cliente', ['Nombre de Fantasia', 'Nombre Fantasia', 'Nombre Receptor', 'Cliente', 'cliente', 'Oficina']);
+      fillFilterUI('mes', getUnique(['Mes', 'mes']));
+      fillFilterUI('usuario', getUnique(['Usuario', 'STCYG', 'usuario']));
+      fillFilterUI('localId', getUniqueLocalAndCCU());
+      fillFilterUI('cliente', getUnique(['Nombre de Fantasia', 'Nombre Fantasia', 'Nombre Receptor', 'Cliente', 'cliente', 'Oficina']));
     }
 
     function setMesActualDefault() {
@@ -892,17 +903,19 @@
       const fFin = fFinStr ? new Date(fFinStr) : null;
 
       return rawData.filter(d => {
-        const dMes = d['Mes'] || d['mes'];
-        const dUsuario = d['Usuario'] || d['usuario'];
-        const dLocal = d['Local'] || '';
-        const dIdCCU = d['ID CCU'] || d['ID'] || d['Id CCU'] || '';
-        const dCliente = d['Nombre de Fantasia'] || d['Nombre Fantasia'] || d['Nombre Receptor'] || d['Cliente'] || d['Oficina'] || '';
+        const dMes = String(d['Mes'] || d['mes'] || '').trim();
+        const dUsuario = String(d['Usuario'] || d['usuario'] || '').trim();
+        const dLocal = String(d['Local'] || '').trim();
+        const dIdCCU = String(d['ID CCU'] || d['ID'] || d['Id CCU'] || '').trim();
+        const dCliente = String(d['Nombre de Fantasia'] || d['Nombre Fantasia'] || d['Nombre Receptor'] || d['Cliente'] || d['Oficina'] || '').trim();
         
         const rawFecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'];
         const dFecha = parseDate(rawFecha);
 
         const matchMes = fMes.length === 0 || fMes.includes(dMes);
         const matchUsuario = fUsuario.length === 0 || fUsuario.includes(dUsuario);
+        
+        // Coincidencia para Local o ID CCU
         const matchLocalId = fLocalId.length === 0 || fLocalId.includes(dLocal) || fLocalId.includes(dIdCCU);
         const matchCliente = fCliente.length === 0 || fCliente.includes(dCliente);
 
@@ -925,7 +938,7 @@
       let countPostMix = 0;
 
       data.forEach(d => {
-        const qty = getServiciosQty(d); // SUMA DE CANTIDAD DE SERVICIOS
+        const qty = getServiciosQty(d);
         const realizada = (d['Realizada 2'] || d['Realizada'] || d['Cumplimiento'] || '').toUpperCase();
         
         if (realizada === "SI" || realizada === "1" || realizada === "EJECUTADA") {
@@ -1019,7 +1032,7 @@
         const mes = d['Mes'] || d['mes'];
         if (!mes) return;
 
-        const qty = getServiciosQty(d); // SUMA DE CANTIDAD DE SERVICIOS
+        const qty = getServiciosQty(d);
         const realizada = (d['Realizada 2'] || d['Realizada'] || d['Cumplimiento'] || '').toUpperCase();
         if (!monthlyStats[mes]) monthlyStats[mes] = { SI: 0, NO: 0 };
 
@@ -1098,7 +1111,7 @@
       let total1_SI = 0, total1_NO = 0;
 
       data.forEach(d => {
-        const qty = getServiciosQty(d); // SUMA DE CANTIDAD DE SERVICIOS
+        const qty = getServiciosQty(d);
         const tipo = d['Tipo de Activo'] || d['Activos'] || d['Categoria'] || 'Post Mix';
         const realizada = (d['Realizada 2'] || d['Realizada'] || d['Cumplimiento'] || '').toUpperCase();
 
@@ -1159,7 +1172,7 @@
     function renderTabla2(data) {
       const t2Stats = {};
       data.forEach(d => {
-        const qty = getServiciosQty(d); // SUMA DE CANTIDAD DE SERVICIOS
+        const qty = getServiciosQty(d);
         const cat = d['Tipo de Activo'] || d['Activos'] || d['Categoria'] || 'Post Mix';
         const usr = d['Usuario'] || 'Sin Usuario';
         const tec = d['Técnico'] || d['Tecnico'] || d['Jefe de Ventas'] || 'Sin Técnico';
