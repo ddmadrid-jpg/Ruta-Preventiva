@@ -9,12 +9,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- jQuery, Select2, Flatpickr, Chart.js & DataLabels Plugin -->
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <!-- jQuery, Flatpickr, Chart.js & DataLabels Plugin -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -166,6 +164,7 @@
       gap: 6px;
       min-width: 170px;
       flex: 1;
+      position: relative;
     }
 
     .filter-group label {
@@ -189,100 +188,164 @@
       box-sizing: border-box;
     }
 
-    .date-input:focus {
-      border-color: var(--excel-green-dark);
-    }
-
-    /* Ajuste Fijo para Evitar Crecimiento Vertical (Cajón Fijo de 1 Línea) */
-    .select2-container--default .select2-selection--multiple {
-      border: 1px solid #dcdfe6 !important;
-      border-radius: 6px !important;
-      height: 38px !important;
-      max-height: 38px !important;
-      overflow: hidden !important;
-      padding: 4px 8px !important;
-      box-sizing: border-box !important;
-    }
-
-    .select2-container--default .select2-selection--multiple .select2-selection__rendered {
-      display: flex !important;
-      align-items: center !important;
-      height: 100% !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      white-space: nowrap !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-    }
-
-    .select2-container--default .select2-selection--multiple .select2-selection__choice {
-      display: none !important; /* Oculta los tags individuales que agrandan la caja */
-    }
-
-    /* Resumen Compacto tipo Excel con Ícono de Embudo */
-    .custom-filter-summary {
-      font-size: 13px;
-      color: var(--excel-green-dark);
-      font-weight: 700;
+    /* Estilo del Componente de Filtro Estilo Google Sheets */
+    .gs-filter-box {
+      border: 1px solid #dcdfe6;
+      border-radius: 6px;
+      height: 38px;
+      padding: 0 12px;
+      background: #fff;
       display: flex;
       align-items: center;
-      gap: 6px;
-      width: 100%;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 13px;
+      user-select: none;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
     }
 
-    .custom-filter-summary i.fa-filter {
-      color: var(--excel-green-header);
+    .gs-filter-box:hover {
+      border-color: var(--excel-green-header);
+    }
+
+    .gs-filter-box.is-filtered {
+      border-color: var(--excel-green-header);
+      background-color: #f0f7f0;
+      font-weight: 700;
+      color: var(--excel-green-dark);
+    }
+
+    .gs-filter-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 85%;
+    }
+
+    .gs-filter-icon {
+      color: #888;
       font-size: 12px;
     }
 
-    .select2-results__option {
-      padding: 6px 12px !important;
-      font-size: 13px !important;
-      display: flex !important;
-      align-items: center !important;
-      gap: 8px !important;
-    }
-
-    .select2-results__option::before {
-      content: "";
-      display: inline-block;
-      width: 14px;
-      height: 14px;
-      border: 1.5px solid #888;
-      border-radius: 3px;
-      background: #fff;
-      flex-shrink: 0;
-    }
-
-    .select2-results__option[aria-selected="true"]::before {
-      content: "✓";
-      color: #fff;
-      background: var(--excel-green-header);
-      border-color: var(--excel-green-header);
-      font-size: 10px;
+    .gs-filter-box.is-filtered .gs-filter-icon {
+      color: var(--excel-green-header);
       font-weight: bold;
-      text-align: center;
-      line-height: 13px;
     }
 
-    .select2-bulk-actions {
-      padding: 6px 12px;
-      background: #f8f9fa;
-      border-bottom: 1px solid #e9ecef;
+    /* Pop-up Desplegable Tipo Google Sheets */
+    .gs-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 260px;
+      background: #ffffff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      z-index: 9999;
+      display: none;
+      padding: 12px;
+      margin-top: 4px;
+      box-sizing: border-box;
+    }
+
+    .gs-dropdown.show {
+      display: block;
+    }
+
+    .gs-bulk-actions {
       display: flex;
       justify-content: space-between;
+      margin-bottom: 8px;
       font-size: 12px;
     }
 
-    .select2-bulk-btn {
+    .gs-link-btn {
       color: var(--pepsi-blue);
       cursor: pointer;
       font-weight: bold;
       text-decoration: underline;
     }
 
-    .select2-bulk-btn:hover {
+    .gs-link-btn:hover {
       color: var(--excel-green-dark);
+    }
+
+    .gs-search-input-wrap {
+      position: relative;
+      margin-bottom: 8px;
+    }
+
+    .gs-search-input-wrap input {
+      width: 100%;
+      padding: 6px 28px 6px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 12px;
+      box-sizing: border-box;
+      outline: none;
+    }
+
+    .gs-search-input-wrap i {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #888;
+      font-size: 12px;
+    }
+
+    .gs-options-list {
+      max-height: 180px;
+      overflow-y: auto;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      padding: 4px 0;
+      margin-bottom: 12px;
+    }
+
+    .gs-option-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .gs-option-item:hover {
+      background-color: #f1f3f5;
+    }
+
+    .gs-option-item input {
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .gs-actions-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .gs-btn {
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+    }
+
+    .gs-btn-cancel {
+      background: #e0e0e0;
+      color: #333;
+    }
+
+    .gs-btn-accept {
+      background: var(--excel-green-header);
+      color: #fff;
     }
 
     /* Layout principal */
@@ -466,11 +529,29 @@
     </div>
   </div>
 
-  <!-- Filtros Estilo Excel -->
+  <!-- Filtros Estilo Google Sheets Nativos -->
   <div class="filter-card">
-    <div class="filter-group">
-      <label for="filter-mes"><i class="fa-regular fa-calendar"></i> Mes</label>
-      <select id="filter-mes" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
+    <div class="filter-group" data-filter="mes">
+      <label><i class="fa-regular fa-calendar"></i> Mes</label>
+      <div class="gs-filter-box">
+        <span class="gs-filter-text">Todos (filtrar...)</span>
+        <i class="fa-solid fa-caret-down gs-filter-icon"></i>
+      </div>
+      <div class="gs-dropdown">
+        <div class="gs-bulk-actions">
+          <span class="gs-link-btn btn-select-filtered">Seleccionar filtrados</span>
+          <span class="gs-link-btn btn-clear-all">Borrar</span>
+        </div>
+        <div class="gs-search-input-wrap">
+          <input type="text" placeholder="Buscar..." class="gs-search-input">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <div class="gs-options-list"></div>
+        <div class="gs-actions-footer">
+          <button class="gs-btn gs-btn-cancel">Cancelar</button>
+          <button class="gs-btn gs-btn-accept">Aceptar</button>
+        </div>
+      </div>
     </div>
 
     <div class="filter-group">
@@ -483,19 +564,73 @@
       <input type="text" id="filter-fecha-fin" class="date-input" placeholder="Seleccionar término...">
     </div>
 
-    <div class="filter-group">
-      <label for="filter-usuario"><i class="fa-solid fa-id-badge"></i> Usuario</label>
-      <select id="filter-usuario" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
+    <div class="filter-group" data-filter="usuario">
+      <label><i class="fa-solid fa-id-badge"></i> Usuario</label>
+      <div class="gs-filter-box">
+        <span class="gs-filter-text">Todos (filtrar...)</span>
+        <i class="fa-solid fa-caret-down gs-filter-icon"></i>
+      </div>
+      <div class="gs-dropdown">
+        <div class="gs-bulk-actions">
+          <span class="gs-link-btn btn-select-filtered">Seleccionar filtrados</span>
+          <span class="gs-link-btn btn-clear-all">Borrar</span>
+        </div>
+        <div class="gs-search-input-wrap">
+          <input type="text" placeholder="Buscar..." class="gs-search-input">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <div class="gs-options-list"></div>
+        <div class="gs-actions-footer">
+          <button class="gs-btn gs-btn-cancel">Cancelar</button>
+          <button class="gs-btn gs-btn-accept">Aceptar</button>
+        </div>
+      </div>
     </div>
 
-    <div class="filter-group">
-      <label for="filter-local-id"><i class="fa-solid fa-hashtag"></i> Local / ID CCU</label>
-      <select id="filter-local-id" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
+    <div class="filter-group" data-filter="localId">
+      <label><i class="fa-solid fa-hashtag"></i> Local / ID CCU</label>
+      <div class="gs-filter-box">
+        <span class="gs-filter-text">Todos (filtrar...)</span>
+        <i class="fa-solid fa-caret-down gs-filter-icon"></i>
+      </div>
+      <div class="gs-dropdown">
+        <div class="gs-bulk-actions">
+          <span class="gs-link-btn btn-select-filtered">Seleccionar filtrados</span>
+          <span class="gs-link-btn btn-clear-all">Borrar</span>
+        </div>
+        <div class="gs-search-input-wrap">
+          <input type="text" placeholder="Buscar..." class="gs-search-input">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <div class="gs-options-list"></div>
+        <div class="gs-actions-footer">
+          <button class="gs-btn gs-btn-cancel">Cancelar</button>
+          <button class="gs-btn gs-btn-accept">Aceptar</button>
+        </div>
+      </div>
     </div>
 
-    <div class="filter-group">
-      <label for="filter-cliente"><i class="fa-solid fa-store"></i> Cliente</label>
-      <select id="filter-cliente" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
+    <div class="filter-group" data-filter="cliente">
+      <label><i class="fa-solid fa-store"></i> Cliente</label>
+      <div class="gs-filter-box">
+        <span class="gs-filter-text">Todos (filtrar...)</span>
+        <i class="fa-solid fa-caret-down gs-filter-icon"></i>
+      </div>
+      <div class="gs-dropdown">
+        <div class="gs-bulk-actions">
+          <span class="gs-link-btn btn-select-filtered">Seleccionar filtrados</span>
+          <span class="gs-link-btn btn-clear-all">Borrar</span>
+        </div>
+        <div class="gs-search-input-wrap">
+          <input type="text" placeholder="Buscar..." class="gs-search-input">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <div class="gs-options-list"></div>
+        <div class="gs-actions-footer">
+          <button class="gs-btn gs-btn-cancel">Cancelar</button>
+          <button class="gs-btn gs-btn-accept">Aceptar</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -539,82 +674,125 @@
 
     const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
+    // Objeto global de estado de filtros
+    const filtersState = {
+      mes: { selected: [], searchText: "" },
+      usuario: { selected: [], searchText: "" },
+      localId: { selected: [], searchText: "" },
+      cliente: { selected: [], searchText: "" }
+    };
+
     $(document).ready(function() {
-      $('.select2-filter').select2({
-        placeholder: "Todos (filtrar...)",
-        allowClear: true,
-        closeOnSelect: false
+      flatpickr.localize(flatpickr.l10ns.es);
+      flatpickr("#filter-fecha-inicio", { dateFormat: "Y-m-d", onChange: renderDashboard });
+      flatpickr("#filter-fecha-fin", { dateFormat: "Y-m-d", onChange: renderDashboard });
+
+      // Abrir/Cerrar Pop-up de Filtro
+      $('.gs-filter-box').on('click', function(e) {
+        e.stopPropagation();
+        const $group = $(this).closest('.filter-group');
+        const $dropdown = $group.find('.gs-dropdown');
+        $('.gs-dropdown').not($dropdown).removeClass('show');
+        $dropdown.toggleClass('show');
       });
 
-      // Actualizar resumen en texto para no sobrecargar visualmente el cajón
-      $('.select2-filter').on('change', function() {
-        updateFilterDisplay($(this));
+      $(document).on('click', function(e) {
+        if (!$(e.target).closest('.filter-group').length) {
+          $('.gs-dropdown').removeClass('show');
+        }
+      });
+
+      $('.gs-dropdown').on('click', function(e) {
+        e.stopPropagation();
+      });
+
+      // Evento de búsqueda interna en el filtro
+      $('.gs-search-input').on('keyup', function() {
+        const query = $(this).val().toLowerCase();
+        const $list = $(this).closest('.gs-dropdown').find('.gs-options-list');
+        $list.find('.gs-option-item').each(function() {
+          const txt = $(this).text().toLowerCase();
+          $(this).toggle(txt.includes(query));
+        });
+      });
+
+      // Botón "Seleccionar filtrados": Marca coincidencias, guarda texto, cierra desplegable y actualiza
+      $('.btn-select-filtered').on('click', function() {
+        const $group = $(this).closest('.filter-group');
+        const filterKey = $group.data('filter');
+        const query = $group.find('.gs-search-input').val().trim();
+
+        $group.find('.gs-option-item:visible input[type="checkbox"]').prop('checked', true);
+
+        // Guardar valores seleccionados
+        const selected = [];
+        $group.find('.gs-options-list input[type="checkbox"]:checked').each(function() {
+          selected.push($(this).val());
+        });
+
+        filtersState[filterKey].selected = selected;
+        filtersState[filterKey].searchText = query;
+
+        updateFilterBoxUI($group, filterKey);
+        $group.find('.gs-dropdown').removeClass('show');
         renderDashboard();
       });
 
-      // Añadir encabezado con botón "Seleccionar filtrados" tipo Excel
-      $('.select2-filter').on('select2:open', function() {
-        const selectId = $(this).attr('id');
-        setTimeout(() => {
-          if ($('.select2-results #' + selectId + '-bulk').length === 0) {
-            $('.select2-results').prepend(`
-              <div class="select2-bulk-actions" id="${selectId}-bulk">
-                <span class="select2-bulk-btn btn-select-all" data-target="${selectId}">Seleccionar filtrados</span>
-                <span class="select2-bulk-btn btn-clear-all" data-target="${selectId}">Borrar</span>
-              </div>
-            `);
-          }
-        }, 10);
+      // Botón "Borrar": Desmarca todo
+      $('.btn-clear-all').on('click', function() {
+        const $group = $(this).closest('.filter-group');
+        $group.find('.gs-options-list input[type="checkbox"]').prop('checked', false);
+        $group.find('.gs-search-input').val('').trigger('keyup');
       });
 
-      $(document).on('click', '.btn-select-all', function() {
-        const targetId = $(this).data('target');
-        const $select = $('#' + targetId);
-        const visibleOptions = [];
-        
-        $('.select2-results__option[aria-selected]').each(function() {
-          const text = $(this).text().trim();
-          $select.find('option').each(function() {
-            if ($(this).text().trim() === text) {
-              visibleOptions.push($(this).val());
-            }
-          });
+      // Botón "Cancelar"
+      $('.gs-btn-cancel').on('click', function() {
+        $(this).closest('.gs-dropdown').removeClass('show');
+      });
+
+      // Botón "Aceptar"
+      $('.gs-btn-accept').on('click', function() {
+        const $group = $(this).closest('.filter-group');
+        const filterKey = $group.data('filter');
+        const query = $group.find('.gs-search-input').val().trim();
+
+        const selected = [];
+        $group.find('.gs-options-list input[type="checkbox"]:checked').each(function() {
+          selected.push($(this).val());
         });
 
-        const currentVal = $select.val() || [];
-        const newVal = [...new Set([...currentVal, ...visibleOptions])];
-        $select.val(newVal).trigger('change.select2');
-      });
+        filtersState[filterKey].selected = selected;
+        filtersState[filterKey].searchText = query;
 
-      $(document).on('click', '.btn-clear-all', function() {
-        const targetId = $(this).data('target');
-        const $select = $('#' + targetId);
-        $select.val([]).trigger('change.select2');
-      });
-
-      flatpickr.localize(flatpickr.l10ns.es);
-      flatpickr("#filter-fecha-inicio", {
-        dateFormat: "Y-m-d",
-        onChange: function() { renderDashboard(); }
-      });
-      flatpickr("#filter-fecha-fin", {
-        dateFormat: "Y-m-d",
-        onChange: function() { renderDashboard(); }
+        updateFilterBoxUI($group, filterKey);
+        $group.find('.gs-dropdown').removeClass('show');
+        renderDashboard();
       });
 
       loadSheetData();
     });
 
-    function updateFilterDisplay($select) {
-      const selectedValues = $select.val() || [];
-      const $container = $select.next('.select2-container').find('.select2-selection__rendered');
-      
-      $container.find('.custom-filter-summary').remove();
+    // Actualiza la casilla externa con el Embudo, número de seleccionados y texto buscado
+    function updateFilterBoxUI($group, filterKey) {
+      const state = filtersState[filterKey];
+      const count = state.selected.length;
+      const $box = $group.find('.gs-filter-box');
+      const $text = $box.find('.gs-filter-text');
+      const $icon = $box.find('.gs-filter-icon');
 
-      if (selectedValues.length === 1) {
-        $container.append(`<span class="custom-filter-summary"><i class="fa-solid fa-filter"></i> ${selectedValues[0]}</span>`);
-      } else if (selectedValues.length > 1) {
-        $container.append(`<span class="custom-filter-summary"><i class="fa-solid fa-filter"></i> ${selectedValues.length} seleccionados</span>`);
+      if (count === 0) {
+        $box.removeClass('is-filtered');
+        $text.text('Todos (filtrar...)');
+        $icon.attr('class', 'fa-solid fa-caret-down gs-filter-icon');
+      } else {
+        $box.addClass('is-filtered');
+        $icon.attr('class', 'fa-solid fa-filter gs-filter-icon');
+
+        let textLabel = count === 1 ? state.selected[0] : `${count} seleccionados`;
+        if (state.searchText !== "") {
+          textLabel += ` ("${state.searchText}")`;
+        }
+        $text.text(textLabel);
       }
     }
 
@@ -626,8 +804,7 @@
         complete: function(results) {
           rawData = results.data;
           document.getElementById('status-box').innerHTML = `<i class="fa-solid fa-circle-check"></i> Base Actualizada (${rawData.length} registros)`;
-          populateSelects();
-          
+          populateFilterLists();
           setMesActualDefault();
           renderDashboard();
         },
@@ -639,19 +816,7 @@
       });
     }
 
-    function setMesActualDefault() {
-      const currentMonthIndex = new Date().getMonth();
-      const currentMonthName = nombresMeses[currentMonthIndex];
-      const availableMonths = $('#filter-mes option').map(function() { return $(this).val(); }).get();
-
-      const matchedMonth = availableMonths.find(m => m.toLowerCase() === currentMonthName.toLowerCase());
-
-      if (matchedMonth) {
-        $('#filter-mes').val([matchedMonth]).trigger('change.select2');
-      }
-    }
-
-    function populateSelects() {
+    function populateFilterLists() {
       if (rawData.length === 0) return;
 
       const getUnique = (keyNames) => {
@@ -664,18 +829,39 @@
         return [...new Set(values.filter(Boolean))].sort();
       };
 
-      const fillSelect = (id, keyNames) => {
-        const select = $('#' + id);
-        select.empty();
-        getUnique(keyNames).forEach(val => {
-          select.append(new Option(val, val, false, false));
+      const fillFilterUI = (filterKey, keyNames) => {
+        const $group = $(`.filter-group[data-filter="${filterKey}"]`);
+        const $list = $group.find('.gs-options-list');
+        $list.empty();
+
+        getUnique(keyNames).forEach((val, idx) => {
+          $list.append(`
+            <label class="gs-option-item">
+              <input type="checkbox" value="${val}" id="${filterKey}-${idx}">
+              <span>${val}</span>
+            </label>
+          `);
         });
       };
 
-      fillSelect('filter-mes', ['Mes', 'mes']);
-      fillSelect('filter-usuario', ['Usuario', 'STCYG', 'usuario']);
-      fillSelect('filter-local-id', ['Local', 'ID CCU', 'ID', 'Id CCU']);
-      fillSelect('filter-cliente', ['Nombre de Fantasia', 'Nombre Fantasia', 'Nombre Receptor', 'Cliente', 'cliente', 'Oficina']);
+      fillFilterUI('mes', ['Mes', 'mes']);
+      fillFilterUI('usuario', ['Usuario', 'STCYG', 'usuario']);
+      fillFilterUI('localId', ['Local', 'ID CCU', 'ID', 'Id CCU']);
+      fillFilterUI('cliente', ['Nombre de Fantasia', 'Nombre Fantasia', 'Nombre Receptor', 'Cliente', 'cliente', 'Oficina']);
+    }
+
+    function setMesActualDefault() {
+      const currentMonthIndex = new Date().getMonth();
+      const currentMonthName = nombresMeses[currentMonthIndex];
+      const $group = $('.filter-group[data-filter="mes"]');
+
+      $group.find('.gs-options-list input[type="checkbox"]').each(function() {
+        if ($(this).val().toLowerCase() === currentMonthName.toLowerCase()) {
+          $(this).prop('checked', true);
+          filtersState.mes.selected = [$(this).val()];
+          updateFilterBoxUI($group, 'mes');
+        }
+      });
     }
 
     function parseDate(dateStr) {
@@ -690,13 +876,13 @@
     }
 
     function getFilteredData() {
-      const fMes = $('#filter-mes').val() || [];
+      const fMes = filtersState.mes.selected;
+      const fUsuario = filtersState.usuario.selected;
+      const fLocalId = filtersState.localId.selected;
+      const fCliente = filtersState.cliente.selected;
+
       const fInicioStr = $('#filter-fecha-inicio').val();
       const fFinStr = $('#filter-fecha-fin').val();
-      const fUsuario = $('#filter-usuario').val() || [];
-      const fLocalId = $('#filter-local-id').val() || [];
-      const fCliente = $('#filter-cliente').val() || [];
-
       const fInicio = fInicioStr ? new Date(fInicioStr) : null;
       const fFin = fFinStr ? new Date(fFinStr) : null;
 
