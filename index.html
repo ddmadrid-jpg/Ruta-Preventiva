@@ -191,6 +191,7 @@
       border-color: var(--excel-green-dark);
     }
 
+    /* Estilos Estilo Excel para Select2 (Checkboxes + Selección Múltiple) */
     .select2-container--default .select2-selection--multiple {
       border: 1px solid #dcdfe6 !important;
       border-radius: 6px !important;
@@ -208,6 +209,57 @@
     .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
       color: #ffffff !important;
       margin-right: 5px !important;
+    }
+
+    .select2-results__option {
+      padding: 6px 12px !important;
+      font-size: 13px !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+    }
+
+    /* Checkbox visual tipo Excel */
+    .select2-results__option::before {
+      content: "";
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 1.5px solid #888;
+      border-radius: 3px;
+      background: #fff;
+      flex-shrink: 0;
+    }
+
+    .select2-results__option[aria-selected="true"]::before {
+      content: "✓";
+      color: #fff;
+      background: var(--excel-green-header);
+      border-color: var(--excel-green-header);
+      font-size: 10px;
+      font-weight: bold;
+      text-align: center;
+      line-height: 13px;
+    }
+
+    .select2-bulk-actions {
+      padding: 6px 12px;
+      background: #f8f9fa;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+
+    .select2-bulk-btn {
+      color: var(--pepsi-blue);
+      cursor: pointer;
+      font-weight: bold;
+      text-decoration: underline;
+    }
+
+    .select2-bulk-btn:hover {
+      color: var(--excel-green-dark);
     }
 
     /* Layout principal */
@@ -391,7 +443,7 @@
     </div>
   </div>
 
-  <!-- Filtros -->
+  <!-- Filtros Estilo Excel (Checkboxes + Selección masiva) -->
   <div class="filter-card">
     <div class="filter-group">
       <label for="filter-mes"><i class="fa-regular fa-calendar"></i> Mes</label>
@@ -413,7 +465,6 @@
       <select id="filter-usuario" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
     </div>
 
-    <!-- Nuevo Filtro: Local / ID CCU -->
     <div class="filter-group">
       <label for="filter-local-id"><i class="fa-solid fa-hashtag"></i> Local / ID CCU</label>
       <select id="filter-local-id" class="select2-filter" multiple="multiple" style="width: 100%;"></select>
@@ -468,7 +519,51 @@
     $(document).ready(function() {
       $('.select2-filter').select2({
         placeholder: "Todos (filtrar...)",
-        allowClear: true
+        allowClear: true,
+        closeOnSelect: false
+      });
+
+      // Añadir encabezado con botón "Seleccionar filtrados" tipo Excel
+      $('.select2-filter').on('select2:open', function() {
+        const selectId = $(this).attr('id');
+        setTimeout(() => {
+          if ($('.select2-results #' + selectId + '-bulk').length === 0) {
+            $('.select2-results').prepend(`
+              <div class="select2-bulk-actions" id="${selectId}-bulk">
+                <span class="select2-bulk-btn btn-select-all" data-target="${selectId}">Seleccionar filtrados</span>
+                <span class="select2-bulk-btn btn-clear-all" data-target="${selectId}">Borrar</span>
+              </div>
+            `);
+          }
+        }, 10);
+      });
+
+      // Manejar clics de selección masiva
+      $(document).on('click', '.btn-select-all', function() {
+        const targetId = $(this).data('target');
+        const $select = $('#' + targetId);
+        const visibleOptions = [];
+        
+        $('.select2-results__option[aria-selected]').each(function() {
+          const text = $(this).text().trim();
+          $select.find('option').each(function() {
+            if ($(this).text().trim() === text) {
+              visibleOptions.push($(this).val());
+            }
+          });
+        });
+
+        const currentVal = $select.val() || [];
+        const newVal = [...new Set([...currentVal, ...visibleOptions])];
+        $select.val(newVal).trigger('change.select2');
+        renderDashboard();
+      });
+
+      $(document).on('click', '.btn-clear-all', function() {
+        const targetId = $(this).data('target');
+        const $select = $('#' + targetId);
+        $select.val([]).trigger('change.select2');
+        renderDashboard();
       });
 
       flatpickr.localize(flatpickr.l10ns.es);
@@ -582,11 +677,7 @@
 
         const matchMes = fMes.length === 0 || fMes.includes(dMes);
         const matchUsuario = fUsuario.length === 0 || fUsuario.includes(dUsuario);
-        
-        // Coincidencia para Local o ID CCU
         const matchLocalId = fLocalId.length === 0 || fLocalId.includes(dLocal) || fLocalId.includes(dIdCCU);
-
-        // Coincidencia para Cliente (Acepta selección múltiple de variantes como "Rey de la Michealda", "Rey de las Cachapas", etc.)
         const matchCliente = fCliente.length === 0 || fCliente.includes(dCliente);
 
         let matchFecha = true;
