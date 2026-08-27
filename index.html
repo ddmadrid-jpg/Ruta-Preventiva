@@ -787,10 +787,18 @@
       }
     }
 
-    // Extractor de Tipo de Activo:
-    // En Urgencias se clasifica por Usuario: stcyg11, stcyg12, stcyg13 -> Camioneta. El resto -> Ruta.
-    // En Ruta Preventiva -> Schop / Post Mix.
+    // Extractor de Tipo de Activo para Gráficos y Tablas:
+    // Mantiene Schop / Post Mix para el gráfico de Dona en ambas pestañas.
     function getTipoActivo(d) {
+      const val = d['Tipo de Activo'] || d['Tipo de Activo '] || d['Activos'] || d['Categoria'] || d['Categoría'] || d['Tipo Urgencia'] || '';
+      const str = String(val).toUpperCase();
+      if (str.includes('SCHOP')) return 'Schop';
+      if (str.includes('POST')) return 'Post Mix';
+      return val || 'Post Mix';
+    }
+
+    // Clasificador exclusivo para Desglose por Técnico en Urgencias (Ruta vs Camioneta)
+    function getCategoriaTecnico(d) {
       if (currentSheetKey === "urgencias") {
         const usr = String(d['Usuario'] || d['usuario'] || '').toUpperCase().trim();
         if (usr === "STCYG11" || usr === "STCYG12" || usr === "STCYG13") {
@@ -798,11 +806,7 @@
         }
         return "Ruta";
       } else {
-        const val = d['Tipo de Activo'] || d['Tipo de Activo '] || d['Activos'] || d['Categoria'] || d['Categoría'] || d['Tipo Urgencia'] || '';
-        const str = String(val).toUpperCase();
-        if (str.includes('SCHOP')) return 'Schop';
-        if (str.includes('POST')) return 'Post Mix';
-        return val || 'Post Mix';
+        return getTipoActivo(d);
       }
     }
 
@@ -834,8 +838,8 @@
           $('#kpi-label-1').text('Total Urgencias');
           $('#kpi-label-2').text('Resolutividad Global');
           $('#kpi-label-3').text('Casos No Resueltos');
-          $('#kpi-subtext-legend').html('<span style="color:#006100; font-weight:bold;">● Ruta</span> | <span style="color:#004b93; font-weight:bold;">● Camionetas</span>');
-          $('#tabla-1-title').text('Resumen por Tipo de Servicio');
+          $('#kpi-subtext-legend').html('<span style="color:#006100; font-weight:bold;">● Schop</span> | <span style="color:#004b93; font-weight:bold;">● Post Mix</span>');
+          $('#tabla-1-title').text('Resumen por Tipo de Activo');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Resueltas)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle de Urgencias No Resueltas');
           $('#container-si-realizadas').show();
@@ -1090,8 +1094,8 @@
 
       let totalSI = 0;
       let totalNO = 0;
-      let countCat1 = 0; // Schop (Preventiva) o Ruta (Urgencias)
-      let countCat2 = 0; // Post Mix (Preventiva) o Camionetas (Urgencias)
+      let countSchop = 0;
+      let countPostMix = 0;
 
       data.forEach(d => {
         const qty = getServiciosQty(d);
@@ -1102,19 +1106,12 @@
           totalNO += qty;
         }
 
+        // Gráfico de dona siempre mantenido por Schop / Post Mix
         const tipo = getTipoActivo(d).toUpperCase();
-        if (currentSheetKey === "urgencias") {
-          if (tipo === "CAMIONETAS") {
-            countCat2 += qty;
-          } else {
-            countCat1 += qty;
-          }
-        } else {
-          if (tipo.includes('SCHOP')) {
-            countCat1 += qty;
-          } else if (tipo.includes('POST')) {
-            countCat2 += qty;
-          }
+        if (tipo.includes('SCHOP')) {
+          countSchop += qty;
+        } else if (tipo.includes('POST')) {
+          countPostMix += qty;
         }
       });
 
@@ -1135,7 +1132,7 @@
 
       document.getElementById('kpi-pendientes').innerText = pctNO + '%';
 
-      renderActivosChart(countCat1, countCat2);
+      renderActivosChart(countSchop, countPostMix);
       renderTrendChart();
       renderTabla1(data);
       renderTabla2(data);
@@ -1146,21 +1143,19 @@
       }
     }
 
-    function renderActivosChart(val1, val2) {
+    function renderActivosChart(schop, postMix) {
       const ctx = document.getElementById('activosChart').getContext('2d');
 
       if (activosChartInstance) {
         activosChartInstance.destroy();
       }
 
-      const labelsText = currentSheetKey === "urgencias" ? ['Ruta', 'Camionetas'] : ['Schop', 'Post Mix'];
-
       activosChartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
-          labels: labelsText,
+          labels: ['Schop', 'Post Mix'],
           datasets: [{
-            data: [val1, val2],
+            data: [schop, postMix],
             backgroundColor: ['#006100', '#004b93'],
             borderWidth: 2,
             borderColor: '#ffffff'
@@ -1178,7 +1173,7 @@
               textStrokeWidth: 2,
               font: { weight: 'bold', size: 10 },
               formatter: function(value, context) {
-                let total = val1 + val2;
+                let total = schop + postMix;
                 if (total === 0 || value === 0) return '';
                 let pct = ((value / total) * 100).toFixed(1) + '%';
                 return pct;
@@ -1188,7 +1183,7 @@
               enabled: true,
               callbacks: {
                 label: function(context) {
-                  let total = val1 + val2;
+                  let total = schop + postMix;
                   let val = context.raw;
                   let pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
                   return `${context.label}: ${val} casos (${pct}%)`;
@@ -1304,13 +1299,11 @@
         }
       });
 
-      const colHeader = currentSheetKey === "urgencias" ? "Tipo de Servicio" : "Tipo de Activo";
-
       let html1 = `
         <table>
           <thead>
             <tr>
-              <th class="left">${colHeader}</th>
+              <th class="left">Tipo de Activo</th>
               <th>NO (Cant. / %)</th>
               <th>SI (Cant. / %)</th>
               <th>Total Servicios</th>
@@ -1354,7 +1347,7 @@
       const t2Stats = {};
       data.forEach(d => {
         const qty = getServiciosQty(d);
-        const cat = getTipoActivo(d);
+        const cat = getCategoriaTecnico(d); // En Urgencias separa por Ruta y Camionetas
         const usr = d['Usuario'] || 'Sin Usuario';
         const tec = d['Técnico'] || d['Tecnico'] || d['Jefe de Ventas'] || 'Sin Técnico';
 
