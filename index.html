@@ -114,7 +114,7 @@
     /* Tarjetas KPI (4 Columnas) */
     .kpi-container {
       display: grid;
-      grid-template-columns: 1fr 0.8fr 0.8fr 1.6fr;
+      grid-template-columns: 1.2fr 0.9fr 0.9fr 1.2fr;
       gap: 16px;
       margin-bottom: 24px;
     }
@@ -135,7 +135,7 @@
       flex-direction: row;
       align-items: center;
       justify-content: flex-start;
-      padding: 12px 16px;
+      padding: 14px 18px;
     }
 
     .kpi-card.alert {
@@ -163,8 +163,8 @@
     }
 
     .chart-box {
-      width: 95px;
-      height: 95px;
+      width: 100px;
+      height: 100px;
       position: relative;
       display: flex;
       align-items: center;
@@ -175,9 +175,9 @@
 
     .mini-trend-box {
       width: 100%;
-      height: 85px;
+      height: 75px;
       position: relative;
-      margin-top: 4px;
+      margin-top: 6px;
     }
 
     /* Panel de Filtros */
@@ -787,7 +787,6 @@
       }
     }
 
-    // Extractor de Tipo de Activo para Gráficos y Tablas:
     function getTipoActivo(d) {
       const val = d['Tipo de Activo'] || d['Tipo de Activo '] || d['Activos'] || d['Categoria'] || d['Categoría'] || d['Tipo Urgencia'] || '';
       const str = String(val).toUpperCase();
@@ -796,7 +795,6 @@
       return val || 'Post Mix';
     }
 
-    // Clasificador exclusivo para Desglose por Técnico en Urgencias (Ruta vs Camionetas)
     function getCategoriaTecnico(d) {
       if (currentSheetKey === "urgencias") {
         const usr = String(d['Usuario'] || d['usuario'] || '').toUpperCase().trim();
@@ -839,7 +837,7 @@
           $('#kpi-label-3').text('Casos No Resueltos');
           $('#kpi-subtext-legend').html('<span style="color:#006100; font-weight:bold;">● Schop</span> | <span style="color:#004b93; font-weight:bold;">● Post Mix</span>');
           $('#tabla-1-title').text('Resumen por Tipo de Activo');
-          $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (Resueltas vs No)');
+          $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Resueltas)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle de Urgencias No Resueltas');
           $('#container-si-realizadas').show();
         } else {
@@ -1194,7 +1192,7 @@
       });
     }
 
-    /* Gráfico de Evolución Mensual Apilado (Verde SI vs Gris NO) con Totales y Cantidades */
+    /* Gráfico de Evolución Mensual Adaptativo */
     function renderTrendChart() {
       const monthlyStats = {};
 
@@ -1223,77 +1221,135 @@
         trendChartInstance.destroy();
       }
 
-      trendChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Resueltas (SI)',
-              data: labels.map(m => {
-                const tot = monthlyStats[m].SI + monthlyStats[m].NO;
-                return tot > 0 ? parseFloat(((monthlyStats[m].SI / tot) * 100).toFixed(1)) : 0;
-              }),
-              backgroundColor: '#006100',
-              borderRadius: 2
+      if (currentSheetKey === "urgencias") {
+        // En Urgencias: Muestra % sobre la barra verde y (Total) justo debajo
+        trendChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: '% Efectividad SI',
+                data: labels.map(m => {
+                  const tot = monthlyStats[m].SI + monthlyStats[m].NO;
+                  return tot > 0 ? parseFloat(((monthlyStats[m].SI / tot) * 100).toFixed(1)) : 0;
+                }),
+                backgroundColor: '#006100',
+                borderRadius: 3
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { font: { size: 10, weight: 'bold' }, color: '#333333' }
+              },
+              y: { display: false, max: 110 }
             },
-            {
-              label: 'No Resueltas (NO)',
-              data: labels.map(m => {
-                const tot = monthlyStats[m].SI + monthlyStats[m].NO;
-                return tot > 0 ? parseFloat(((monthlyStats[m].NO / tot) * 100).toFixed(1)) : 0;
-              }),
-              backgroundColor: '#7f8c8d',
-              borderRadius: 2
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            x: {
-              stacked: true,
-              grid: { display: false },
-              ticks: { font: { size: 10, weight: 'bold' }, color: '#333333' }
-            },
-            y: {
-              stacked: true,
-              display: false,
-              max: 115
+            plugins: {
+              legend: { display: false },
+              datalabels: {
+                display: true,
+                color: '#ffffff',
+                textStrokeColor: '#000000',
+                textStrokeWidth: 2,
+                font: { weight: 'bold', size: 10 },
+                formatter: function(value) {
+                  return `${value}%`;
+                },
+                align: 'center',
+                anchor: 'center'
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    const m = ctx.label;
+                    const cantSI = monthlyStats[m].SI;
+                    const tot = monthlyStats[m].SI + monthlyStats[m].NO;
+                    return `${m}: ${cantSI}/${tot} resueltos (${ctx.raw}%)`;
+                  }
+                }
+              }
             }
           },
-          plugins: {
-            legend: { display: false },
-            datalabels: {
-              display: true,
-              formatter: function(value, context) {
-                const m = labels[context.dataIndex];
-                const isSI = context.datasetIndex === 0;
-                const cant = isSI ? monthlyStats[m].SI : monthlyStats[m].NO;
-                return value > 0 ? `${value}%\n(${cant})` : '';
+          plugins: [ChartDataLabels, {
+            id: 'customTotalSubtext',
+            afterDraw: function(chart) {
+              const ctxChart = chart.ctx;
+              ctxChart.save();
+              ctxChart.font = 'bold 10px Roboto, sans-serif';
+              ctxChart.fillStyle = '#555555';
+              ctxChart.textAlign = 'center';
+
+              const meta = chart.getDatasetMeta(0);
+              meta.data.forEach((bar, index) => {
+                const mes = labels[index];
+                const totalM = monthlyStats[mes].SI + monthlyStats[mes].NO;
+                if (totalM > 0) {
+                  ctxChart.fillText(`(${totalM})`, bar.x, bar.y + 14);
+                }
+              });
+              ctxChart.restore();
+            }
+          }]
+        });
+      } else {
+        // En Ruta Preventiva: Vista Original Limpia (% Centrado en barra verde)
+        trendChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: '% Cumplimiento SI',
+                data: labels.map(m => {
+                  const tot = monthlyStats[m].SI + monthlyStats[m].NO;
+                  return tot > 0 ? parseFloat(((monthlyStats[m].SI / tot) * 100).toFixed(1)) : 0;
+                }),
+                backgroundColor: '#006100',
+                borderRadius: 3
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { font: { size: 11, weight: 'bold' }, color: '#333333' }
               },
-              color: '#ffffff',
-              textStrokeColor: '#000000',
-              textStrokeWidth: 1.5,
-              font: { weight: 'bold', size: 9 },
-              align: 'center',
-              anchor: 'center'
+              y: { display: false, max: 100 }
             },
-            tooltip: {
-              callbacks: {
-                label: function(ctx) {
-                  const m = ctx.label;
-                  const isSI = ctx.datasetIndex === 0;
-                  const cant = isSI ? monthlyStats[m].SI : monthlyStats[m].NO;
-                  const labelName = isSI ? 'Resueltas' : 'No Resueltas';
-                  return `${labelName}: ${cant} casos (${ctx.raw}%)`;
+            plugins: {
+              legend: { display: false },
+              datalabels: {
+                display: true,
+                color: '#ffffff',
+                textStrokeColor: '#000000',
+                textStrokeWidth: 2,
+                font: { weight: 'bold', size: 11 },
+                formatter: (v) => v + '%',
+                align: 'center',
+                anchor: 'center'
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    const m = ctx.label;
+                    const cantSI = monthlyStats[m].SI;
+                    const tot = monthlyStats[m].SI + monthlyStats[m].NO;
+                    return `${m}: ${cantSI}/${tot} (${ctx.raw}%)`;
+                  }
                 }
               }
             }
           }
-        }
-      });
+        });
+      }
     }
 
     function renderTabla1(data) {
@@ -1362,7 +1418,7 @@
       const t2Stats = {};
       data.forEach(d => {
         const qty = getServiciosQty(d);
-        const cat = getCategoriaTecnico(d); // En Urgencias separa por Ruta y Camionetas
+        const cat = getCategoriaTecnico(d);
         const usr = d['Usuario'] || 'Sin Usuario';
         const tec = d['Técnico'] || d['Tecnico'] || d['Jefe de Ventas'] || 'Sin Técnico';
 
