@@ -558,7 +558,7 @@
       <div>
         <div class="kpi-title" id="kpi-label-1">Total Servicios</div>
         <div class="kpi-value" id="kpi-total">0</div>
-        <div class="kpi-subtext">
+        <div class="kpi-subtext" id="kpi-subtext-legend">
           <span style="color:#006100; font-weight:bold;">● Schop</span> | 
           <span style="color:#004b93; font-weight:bold;">● Post Mix</span>
         </div>
@@ -698,7 +698,7 @@
     <div class="left-column">
       <div class="table-container">
         <div class="table-header">
-          <span>Resumen por Tipo de Activo</span>
+          <span id="tabla-1-title">Resumen por Tipo de Activo</span>
         </div>
         <div id="tabla-1-container"></div>
       </div>
@@ -787,16 +787,25 @@
       }
     }
 
-    // Extractor Unificado para Tipo de Activo (Soporta columna C "Tipo de Activo" / "Nombre Fantasía")
+    // Extractor de Tipo de Activo:
+    // En Urgencias se clasifica por Usuario: stcyg11, stcyg12, stcyg13 -> Camioneta. El resto -> Ruta.
+    // En Ruta Preventiva -> Schop / Post Mix.
     function getTipoActivo(d) {
-      const val = d['Tipo de Activo'] || d['Tipo de Activo '] || d['Activos'] || d['Categoria'] || d['Categoría'] || d['Tipo Urgencia'] || '';
-      const str = String(val).toUpperCase();
-      if (str.includes('SCHOP')) return 'Schop';
-      if (str.includes('POST')) return 'Post Mix';
-      return val || 'Post Mix';
+      if (currentSheetKey === "urgencias") {
+        const usr = String(d['Usuario'] || d['usuario'] || '').toUpperCase().trim();
+        if (usr === "STCYG11" || usr === "STCYG12" || usr === "STCYG13") {
+          return "Camionetas";
+        }
+        return "Ruta";
+      } else {
+        const val = d['Tipo de Activo'] || d['Tipo de Activo '] || d['Activos'] || d['Categoria'] || d['Categoría'] || d['Tipo Urgencia'] || '';
+        const str = String(val).toUpperCase();
+        if (str.includes('SCHOP')) return 'Schop';
+        if (str.includes('POST')) return 'Post Mix';
+        return val || 'Post Mix';
+      }
     }
 
-    // Extractor Unificado para Nombre del Cliente (Mapeo de "Nombre Fantasía")
     function getNombreCliente(d) {
       return d['Nombre Fantasía'] || d['Nombre Fantasía '] || d['Nombre de Fantasia'] || d['Nombre Fantasia'] || d['Cliente'] || d['Nombre Receptor'] || d['Oficina'] || '-';
     }
@@ -825,6 +834,8 @@
           $('#kpi-label-1').text('Total Urgencias');
           $('#kpi-label-2').text('Resolutividad Global');
           $('#kpi-label-3').text('Casos No Resueltos');
+          $('#kpi-subtext-legend').html('<span style="color:#006100; font-weight:bold;">● Ruta</span> | <span style="color:#004b93; font-weight:bold;">● Camionetas</span>');
+          $('#tabla-1-title').text('Resumen por Tipo de Servicio');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Resueltas)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle de Urgencias No Resueltas');
           $('#container-si-realizadas').show();
@@ -833,6 +844,8 @@
           $('#kpi-label-1').text('Total Servicios');
           $('#kpi-label-2').text('Cumplimiento Global');
           $('#kpi-label-3').text('Visitas No Realizadas');
+          $('#kpi-subtext-legend').html('<span style="color:#006100; font-weight:bold;">● Schop</span> | <span style="color:#004b93; font-weight:bold;">● Post Mix</span>');
+          $('#tabla-1-title').text('Resumen por Tipo de Activo');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% SI)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Justificación Visita No Realizada');
           $('#container-si-realizadas').hide();
@@ -1077,8 +1090,8 @@
 
       let totalSI = 0;
       let totalNO = 0;
-      let countSchop = 0;
-      let countPostMix = 0;
+      let countCat1 = 0; // Schop (Preventiva) o Ruta (Urgencias)
+      let countCat2 = 0; // Post Mix (Preventiva) o Camionetas (Urgencias)
 
       data.forEach(d => {
         const qty = getServiciosQty(d);
@@ -1090,10 +1103,18 @@
         }
 
         const tipo = getTipoActivo(d).toUpperCase();
-        if (tipo.includes('SCHOP')) {
-          countSchop += qty;
-        } else if (tipo.includes('POST')) {
-          countPostMix += qty;
+        if (currentSheetKey === "urgencias") {
+          if (tipo === "CAMIONETAS") {
+            countCat2 += qty;
+          } else {
+            countCat1 += qty;
+          }
+        } else {
+          if (tipo.includes('SCHOP')) {
+            countCat1 += qty;
+          } else if (tipo.includes('POST')) {
+            countCat2 += qty;
+          }
         }
       });
 
@@ -1114,7 +1135,7 @@
 
       document.getElementById('kpi-pendientes').innerText = pctNO + '%';
 
-      renderActivosChart(countSchop, countPostMix);
+      renderActivosChart(countCat1, countCat2);
       renderTrendChart();
       renderTabla1(data);
       renderTabla2(data);
@@ -1125,19 +1146,21 @@
       }
     }
 
-    function renderActivosChart(schop, postMix) {
+    function renderActivosChart(val1, val2) {
       const ctx = document.getElementById('activosChart').getContext('2d');
 
       if (activosChartInstance) {
         activosChartInstance.destroy();
       }
 
+      const labelsText = currentSheetKey === "urgencias" ? ['Ruta', 'Camionetas'] : ['Schop', 'Post Mix'];
+
       activosChartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
-          labels: ['Schop', 'Post Mix'],
+          labels: labelsText,
           datasets: [{
-            data: [schop, postMix],
+            data: [val1, val2],
             backgroundColor: ['#006100', '#004b93'],
             borderWidth: 2,
             borderColor: '#ffffff'
@@ -1155,7 +1178,7 @@
               textStrokeWidth: 2,
               font: { weight: 'bold', size: 10 },
               formatter: function(value, context) {
-                let total = schop + postMix;
+                let total = val1 + val2;
                 if (total === 0 || value === 0) return '';
                 let pct = ((value / total) * 100).toFixed(1) + '%';
                 return pct;
@@ -1165,10 +1188,10 @@
               enabled: true,
               callbacks: {
                 label: function(context) {
-                  let total = schop + postMix;
+                  let total = val1 + val2;
                   let val = context.raw;
                   let pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-                  return `${context.label}: ${val} servicios (${pct}%)`;
+                  return `${context.label}: ${val} casos (${pct}%)`;
                 }
               }
             }
@@ -1281,11 +1304,13 @@
         }
       });
 
+      const colHeader = currentSheetKey === "urgencias" ? "Tipo de Servicio" : "Tipo de Activo";
+
       let html1 = `
         <table>
           <thead>
             <tr>
-              <th class="left">Tipo de Activo</th>
+              <th class="left">${colHeader}</th>
               <th>NO (Cant. / %)</th>
               <th>SI (Cant. / %)</th>
               <th>Total Servicios</th>
