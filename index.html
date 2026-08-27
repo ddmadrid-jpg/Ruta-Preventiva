@@ -111,7 +111,7 @@
       border-bottom-color: var(--excel-green-header);
     }
 
-    /* Tarjetas KPI Reestructuradas (Espacio expandido para Tendencia de 13 meses) */
+    /* Tarjetas KPI (4 Columnas) */
     .kpi-container {
       display: grid;
       grid-template-columns: 1fr 0.8fr 0.8fr 1.6fr;
@@ -439,11 +439,16 @@
       text-align: left;
     }
 
+    /* Títulos Fijos (Sticky Header) al Hacer Scroll */
     thead tr th {
       background-color: var(--excel-green-header);
       color: #ffffff;
       font-weight: 600;
       font-size: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
 
     tr.subtotal {
@@ -511,6 +516,7 @@
     .scrollable-table {
       max-height: 380px;
       overflow-y: auto;
+      position: relative;
     }
 
     .no-data {
@@ -781,6 +787,20 @@
       }
     }
 
+    // Extractor Unificado para Tipo de Activo (Soporta columna C "Tipo de Activo" / "Nombre Fantasía")
+    function getTipoActivo(d) {
+      const val = d['Tipo de Activo'] || d['Tipo de Activo '] || d['Activos'] || d['Categoria'] || d['Categoría'] || d['Tipo Urgencia'] || '';
+      const str = String(val).toUpperCase();
+      if (str.includes('SCHOP')) return 'Schop';
+      if (str.includes('POST')) return 'Post Mix';
+      return val || 'Post Mix';
+    }
+
+    // Extractor Unificado para Nombre del Cliente (Mapeo de "Nombre Fantasía")
+    function getNombreCliente(d) {
+      return d['Nombre Fantasía'] || d['Nombre Fantasía '] || d['Nombre de Fantasia'] || d['Nombre Fantasia'] || d['Cliente'] || d['Nombre Receptor'] || d['Oficina'] || '-';
+    }
+
     $(document).ready(function() {
       flatpickr.localize(flatpickr.l10ns.es);
       flatpickr("#filter-fecha-inicio", { dateFormat: "Y-m-d", onChange: renderDashboard });
@@ -805,7 +825,7 @@
           $('#kpi-label-1').text('Total Urgencias');
           $('#kpi-label-2').text('Resolutividad Global');
           $('#kpi-label-3').text('Casos No Resueltos');
-          $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (Resueltas vs No)');
+          $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Resueltas)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle de Urgencias No Resueltas');
           $('#container-si-realizadas').show();
         } else {
@@ -963,7 +983,7 @@
         let values = [];
         rawData.forEach(d => {
           const loc = d['Local'] || d['local'];
-          const ccu = d['ID CCU'] || d['ID'] || d['Id CCU'] || d['id_ccu'];
+          const ccu = d['ID CCU'] || d['ID'] || d['Id CCU'] || d['id_ccu'] || d['ID Cliente (Escaneado)'] || d['ID Cliente (Manual)'];
           if (loc) values.push(String(loc).trim());
           if (ccu) values.push(String(ccu).trim());
         });
@@ -988,7 +1008,7 @@
       fillFilterUI('mes', getUnique(['Mes', 'mes']));
       fillFilterUI('usuario', getUnique(['Usuario', 'STCYG', 'usuario']));
       fillFilterUI('localId', getUniqueLocalAndCCU());
-      fillFilterUI('cliente', getUnique(['Nombre de Fantasia', 'Nombre Fantasia', 'Nombre Receptor', 'Cliente', 'cliente', 'Oficina']));
+      fillFilterUI('cliente', getUnique(['Nombre Fantasía', 'Nombre Fantasía ', 'Nombre de Fantasia', 'Nombre Fantasia', 'Nombre Receptor', 'Cliente', 'cliente', 'Oficina']));
     }
 
     function setMesActualDefault() {
@@ -1031,10 +1051,10 @@
         const dMes = String(d['Mes'] || d['mes'] || '').trim();
         const dUsuario = String(d['Usuario'] || d['usuario'] || '').trim();
         const dLocal = String(d['Local'] || '').trim();
-        const dIdCCU = String(d['ID CCU'] || d['ID'] || d['Id CCU'] || '').trim();
-        const dCliente = String(d['Nombre de Fantasia'] || d['Nombre Fantasia'] || d['Nombre Receptor'] || d['Cliente'] || d['Oficina'] || '').trim();
+        const dIdCCU = String(d['ID CCU'] || d['ID'] || d['Id CCU'] || d['ID Cliente (Escaneado)'] || d['ID Cliente (Manual)'] || '').trim();
+        const dCliente = String(getNombreCliente(d)).trim();
         
-        const rawFecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha Ejecución'];
+        const rawFecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || d['Fecha'];
         const dFecha = parseDate(rawFecha);
 
         const matchMes = fMes.length === 0 || fMes.includes(dMes);
@@ -1069,8 +1089,7 @@
           totalNO += qty;
         }
 
-        // Extensión para capturar tipo de activo en Urgencias ("Tipo de Activo" o "Categoría")
-        const tipo = (d['Tipo de Activo'] || d['Activos'] || d['Categoria'] || d['Categoría'] || '').toUpperCase();
+        const tipo = getTipoActivo(d).toUpperCase();
         if (tipo.includes('SCHOP')) {
           countSchop += qty;
         } else if (tipo.includes('POST')) {
@@ -1159,7 +1178,6 @@
       });
     }
 
-    /* Gráfico de evolución en Urgencias: Cantidades Reales por Mes sobrepuestas SI (verde) vs NO (gris) hasta 13 meses */
     function renderTrendChart() {
       const monthlyStats = {};
 
@@ -1188,109 +1206,61 @@
         trendChartInstance.destroy();
       }
 
-      // En Urgencias se muestran CANTIDADES SOBREPUESTAS (Barras Apiladas)
-      if (currentSheetKey === "urgencias") {
-        trendChartInstance = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: labels,
-            datasets: [
-              {
-                label: 'Resueltos (SI)',
-                data: labels.map(m => monthlyStats[m].SI),
-                backgroundColor: '#006100',
-                borderRadius: 2
-              },
-              {
-                label: 'No Resueltos (NO)',
-                data: labels.map(m => monthlyStats[m].NO),
-                backgroundColor: '#7f8c8d',
-                borderRadius: 2
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              x: {
-                stacked: true,
-                grid: { display: false },
-                ticks: { font: { size: 10, weight: 'bold' }, color: '#333333' }
-              },
-              y: {
-                stacked: true,
-                display: false
-              }
-            },
-            plugins: {
-              legend: { display: false },
-              datalabels: {
-                color: '#ffffff',
-                font: { weight: 'bold', size: 9 },
-                formatter: (v) => v > 0 ? v : ''
-              },
-              tooltip: {
-                callbacks: {
-                  label: function(ctx) {
-                    return `${ctx.dataset.label}: ${ctx.raw} casos`;
-                  }
-                }
-              }
+      trendChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: '% Efectividad SI',
+              data: labels.map(m => {
+                const tot = monthlyStats[m].SI + monthlyStats[m].NO;
+                return tot > 0 ? parseFloat(((monthlyStats[m].SI / tot) * 100).toFixed(1)) : 0;
+              }),
+              backgroundColor: '#006100',
+              borderRadius: 3
             }
-          }
-        });
-      } else {
-        // En Ruta Preventiva se mantiene en Porcentajes
-        trendChartInstance = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: labels,
-            datasets: [
-              {
-                label: '% Cumplimiento SI',
-                data: labels.map(m => {
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 10, weight: 'bold' }, color: '#333333' }
+            },
+            y: { display: false, max: 115 }
+          },
+          plugins: {
+            legend: { display: false },
+            datalabels: {
+              display: true,
+              color: '#ffffff',
+              textStrokeColor: '#000000',
+              textStrokeWidth: 2,
+              font: { weight: 'bold', size: 10 },
+              formatter: function(value, context) {
+                const mes = labels[context.dataIndex];
+                const totalServicios = monthlyStats[mes].SI + monthlyStats[mes].NO;
+                return `${value}%\n(${totalServicios})`;
+              },
+              align: 'center',
+              anchor: 'center'
+            },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  const m = ctx.label;
+                  const cantSI = monthlyStats[m].SI;
                   const tot = monthlyStats[m].SI + monthlyStats[m].NO;
-                  return tot > 0 ? ((monthlyStats[m].SI / tot) * 100).toFixed(1) : 0;
-                }),
-                backgroundColor: '#006100',
-                borderRadius: 3
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              x: {
-                grid: { display: false },
-                ticks: { font: { size: 11, weight: 'bold' }, color: '#333333' }
-              },
-              y: { display: false, max: 100 }
-            },
-            plugins: {
-              legend: { display: false },
-              datalabels: {
-                color: '#ffffff',
-                textStrokeColor: '#000000',
-                textStrokeWidth: 2,
-                font: { weight: 'bold', size: 11 },
-                formatter: (v) => v + '%'
-              },
-              tooltip: {
-                callbacks: {
-                  label: function(ctx) {
-                    const m = ctx.label;
-                    const cantSI = monthlyStats[m].SI;
-                    const tot = monthlyStats[m].SI + monthlyStats[m].NO;
-                    return `${m}: ${cantSI}/${tot} (${ctx.raw}%)`;
-                  }
+                  return `${m}: ${cantSI}/${tot} resueltos (${ctx.raw}%)`;
                 }
               }
             }
           }
-        });
-      }
+        }
+      });
     }
 
     function renderTabla1(data) {
@@ -1299,7 +1269,7 @@
 
       data.forEach(d => {
         const qty = getServiciosQty(d);
-        const tipo = d['Tipo de Activo'] || d['Activos'] || d['Categoria'] || d['Categoría'] || 'Post Mix';
+        const tipo = getTipoActivo(d);
 
         if(!t1Stats[tipo]) t1Stats[tipo] = { SI: 0, NO: 0 };
         if(isServicioRealizado(d)) {
@@ -1359,7 +1329,7 @@
       const t2Stats = {};
       data.forEach(d => {
         const qty = getServiciosQty(d);
-        const cat = d['Tipo de Activo'] || d['Activos'] || d['Categoria'] || d['Categoría'] || 'Post Mix';
+        const cat = getTipoActivo(d);
         const usr = d['Usuario'] || 'Sin Usuario';
         const tec = d['Técnico'] || d['Tecnico'] || d['Jefe de Ventas'] || 'Sin Técnico';
 
@@ -1475,8 +1445,8 @@
 
       noRealizadas.forEach(d => {
         const tec = d['Usuario'] || d['Técnico'] || d['Tecnico'] || '-';
-        const fecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha Ejecución'] || '-';
-        const cliente = d['Nombre de Fantasia'] || d['Nombre Fantasia'] || d['Cliente'] || d['Nombre Receptor'] || d['Oficina'] || '-';
+        const fecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
+        const cliente = getNombreCliente(d);
         
         const motivo = d['Resuelto'] || d['Motivo No Servicio'] || d['motivo_no_servicio'] || 'Sin Especificar';
         const comentario = d['Comentario No Resuelto'] || d['Comentario Motivo'] || d['Comentario'] || '-';
@@ -1535,8 +1505,8 @@
 
       siRealizadas.forEach(d => {
         const tec = d['Usuario'] || d['Técnico'] || d['Tecnico'] || '-';
-        const fecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha Ejecución'] || '-';
-        const cliente = d['Nombre de Fantasia'] || d['Nombre Fantasia'] || d['Cliente'] || d['Oficina'] || '-';
+        const fecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
+        const cliente = getNombreCliente(d);
         const receptor = d['Nombre Receptor Local'] || d['Nombre Receptor'] || '-';
         const comentario = d['Comentario Producto dete'] || d['Comentario Motivo'] || d['Comentario'] || 'Problema resuelto satisfactoriamente';
         
