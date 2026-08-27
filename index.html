@@ -111,10 +111,10 @@
       border-bottom-color: var(--excel-green-header);
     }
 
-    /* Tarjetas KPI (4 Columnas) */
+    /* Tarjetas KPI Reestructuradas (Espacio expandido para Tendencia de 13 meses) */
     .kpi-container {
       display: grid;
-      grid-template-columns: 1.2fr 0.9fr 0.9fr 1.2fr;
+      grid-template-columns: 1fr 0.8fr 0.8fr 1.6fr;
       gap: 16px;
       margin-bottom: 24px;
     }
@@ -135,7 +135,7 @@
       flex-direction: row;
       align-items: center;
       justify-content: flex-start;
-      padding: 14px 18px;
+      padding: 12px 16px;
     }
 
     .kpi-card.alert {
@@ -163,8 +163,8 @@
     }
 
     .chart-box {
-      width: 100px;
-      height: 100px;
+      width: 95px;
+      height: 95px;
       position: relative;
       display: flex;
       align-items: center;
@@ -175,9 +175,9 @@
 
     .mini-trend-box {
       width: 100%;
-      height: 75px;
+      height: 85px;
       position: relative;
-      margin-top: 6px;
+      margin-top: 4px;
     }
 
     /* Panel de Filtros */
@@ -197,7 +197,7 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      min-width: 170px;
+      min-width: 160px;
       flex: 1;
       position: relative;
     }
@@ -575,7 +575,7 @@
     </div>
 
     <div class="kpi-card" style="border-left-color: var(--pepsi-blue);">
-      <div class="kpi-title"><i class="fa-solid fa-chart-column"></i> Evolución Mensual (% SI)</div>
+      <div class="kpi-title" id="trend-card-title"><i class="fa-solid fa-chart-column"></i> Evolución Mensual (% SI)</div>
       <div class="mini-trend-box">
         <canvas id="trendChart"></canvas>
       </div>
@@ -705,10 +705,10 @@
         <div class="scrollable-table" id="tabla-no-realizadas-container"></div>
       </div>
 
-      <!-- Nueva Tabla Exclusiva para Servicios Resueltos (SI) en Urgencias -->
+      <!-- Tabla de Servicios Resueltos (Exclusiva de Urgencias) -->
       <div class="table-container" id="container-si-realizadas" style="display: none;">
         <div class="table-header" style="background-color: #e8f5e9; color: var(--excel-green-dark);">
-          <span><i class="fa-solid fa-circle-check"></i> Detalle de Casos Resueltos Exitosamente</span>
+          <span><i class="fa-solid fa-circle-check"></i> Detalle de Urgencias Resueltas Exitosamente</span>
         </div>
         <div class="scrollable-table" id="tabla-si-realizadas-container"></div>
       </div>
@@ -765,7 +765,7 @@
     }
 
     function getServiciosQty(d) {
-      if (currentSheetKey === "urgencias") return 1; // En urgencias cada fila es un servicio
+      if (currentSheetKey === "urgencias") return 1;
       const val = d['Servicios'] || d['servicios'] || d['SERVICIOS'] || d['Cant'] || d['Cantidad'];
       const num = parseInt(val, 10);
       return isNaN(num) ? 1 : num;
@@ -800,12 +800,12 @@
 
         currentSheetKey = targetSheet;
 
-        // Adaptar Interfaz según la hoja
         if (currentSheetKey === "urgencias") {
           $('#main-title').html('<i class="fa-solid fa-truck-medical" style="font-size: 20px; color: #d32f2f;"></i> Dashboard Urgencias Atendidas');
           $('#kpi-label-1').text('Total Urgencias');
           $('#kpi-label-2').text('Resolutividad Global');
           $('#kpi-label-3').text('Casos No Resueltos');
+          $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (Resueltas vs No)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle de Urgencias No Resueltas');
           $('#container-si-realizadas').show();
         } else {
@@ -813,6 +813,7 @@
           $('#kpi-label-1').text('Total Servicios');
           $('#kpi-label-2').text('Cumplimiento Global');
           $('#kpi-label-3').text('Visitas No Realizadas');
+          $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% SI)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Justificación Visita No Realizada');
           $('#container-si-realizadas').hide();
         }
@@ -1068,7 +1069,8 @@
           totalNO += qty;
         }
 
-        const tipo = (d['Tipo de Activo'] || d['Activos'] || d['Categoria'] || '').toUpperCase();
+        // Extensión para capturar tipo de activo en Urgencias ("Tipo de Activo" o "Categoría")
+        const tipo = (d['Tipo de Activo'] || d['Activos'] || d['Categoria'] || d['Categoría'] || '').toUpperCase();
         if (tipo.includes('SCHOP')) {
           countSchop += qty;
         } else if (tipo.includes('POST')) {
@@ -1157,7 +1159,7 @@
       });
     }
 
-    /* Gráfico de evolución ajustado para los últimos 4 meses */
+    /* Gráfico de evolución en Urgencias: Cantidades Reales por Mes sobrepuestas SI (verde) vs NO (gris) hasta 13 meses */
     function renderTrendChart() {
       const monthlyStats = {};
 
@@ -1175,10 +1177,9 @@
         }
       });
 
-      // Tomar hasta los últimos 4 meses disponibles
       let labels = Object.keys(monthlyStats);
-      if (labels.length > 4) {
-        labels = labels.slice(-4);
+      if (labels.length > 13) {
+        labels = labels.slice(-13);
       }
 
       const ctx = document.getElementById('trendChart').getContext('2d');
@@ -1187,54 +1188,109 @@
         trendChartInstance.destroy();
       }
 
-      trendChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: '% Cumplimiento SI',
-              data: labels.map(m => {
-                const tot = monthlyStats[m].SI + monthlyStats[m].NO;
-                return tot > 0 ? ((monthlyStats[m].SI / tot) * 100).toFixed(1) : 0;
-              }),
-              backgroundColor: '#006100',
-              borderRadius: 3
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            x: {
-              grid: { display: false },
-              ticks: { font: { size: 11, weight: 'bold' }, color: '#333333' }
-            },
-            y: { display: false, max: 100 }
+      // En Urgencias se muestran CANTIDADES SOBREPUESTAS (Barras Apiladas)
+      if (currentSheetKey === "urgencias") {
+        trendChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Resueltos (SI)',
+                data: labels.map(m => monthlyStats[m].SI),
+                backgroundColor: '#006100',
+                borderRadius: 2
+              },
+              {
+                label: 'No Resueltos (NO)',
+                data: labels.map(m => monthlyStats[m].NO),
+                backgroundColor: '#7f8c8d',
+                borderRadius: 2
+              }
+            ]
           },
-          plugins: {
-            legend: { display: false },
-            datalabels: {
-              color: '#ffffff',
-              textStrokeColor: '#000000',
-              textStrokeWidth: 2,
-              font: { weight: 'bold', size: 11 },
-              formatter: (v) => v + '%'
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                stacked: true,
+                grid: { display: false },
+                ticks: { font: { size: 10, weight: 'bold' }, color: '#333333' }
+              },
+              y: {
+                stacked: true,
+                display: false
+              }
             },
-            tooltip: {
-              callbacks: {
-                label: function(ctx) {
-                  const m = ctx.label;
-                  const cantSI = monthlyStats[m].SI;
-                  const tot = monthlyStats[m].SI + monthlyStats[m].NO;
-                  return `${m}: ${cantSI}/${tot} (${ctx.raw}%)`;
+            plugins: {
+              legend: { display: false },
+              datalabels: {
+                color: '#ffffff',
+                font: { weight: 'bold', size: 9 },
+                formatter: (v) => v > 0 ? v : ''
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    return `${ctx.dataset.label}: ${ctx.raw} casos`;
+                  }
                 }
               }
             }
           }
-        }
-      });
+        });
+      } else {
+        // En Ruta Preventiva se mantiene en Porcentajes
+        trendChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: '% Cumplimiento SI',
+                data: labels.map(m => {
+                  const tot = monthlyStats[m].SI + monthlyStats[m].NO;
+                  return tot > 0 ? ((monthlyStats[m].SI / tot) * 100).toFixed(1) : 0;
+                }),
+                backgroundColor: '#006100',
+                borderRadius: 3
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { font: { size: 11, weight: 'bold' }, color: '#333333' }
+              },
+              y: { display: false, max: 100 }
+            },
+            plugins: {
+              legend: { display: false },
+              datalabels: {
+                color: '#ffffff',
+                textStrokeColor: '#000000',
+                textStrokeWidth: 2,
+                font: { weight: 'bold', size: 11 },
+                formatter: (v) => v + '%'
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    const m = ctx.label;
+                    const cantSI = monthlyStats[m].SI;
+                    const tot = monthlyStats[m].SI + monthlyStats[m].NO;
+                    return `${m}: ${cantSI}/${tot} (${ctx.raw}%)`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
     }
 
     function renderTabla1(data) {
@@ -1243,7 +1299,7 @@
 
       data.forEach(d => {
         const qty = getServiciosQty(d);
-        const tipo = d['Tipo de Activo'] || d['Activos'] || d['Categoria'] || 'Post Mix';
+        const tipo = d['Tipo de Activo'] || d['Activos'] || d['Categoria'] || d['Categoría'] || 'Post Mix';
 
         if(!t1Stats[tipo]) t1Stats[tipo] = { SI: 0, NO: 0 };
         if(isServicioRealizado(d)) {
@@ -1303,7 +1359,7 @@
       const t2Stats = {};
       data.forEach(d => {
         const qty = getServiciosQty(d);
-        const cat = d['Tipo de Activo'] || d['Activos'] || d['Categoria'] || 'Post Mix';
+        const cat = d['Tipo de Activo'] || d['Activos'] || d['Categoria'] || d['Categoría'] || 'Post Mix';
         const usr = d['Usuario'] || 'Sin Usuario';
         const tec = d['Técnico'] || d['Tecnico'] || d['Jefe de Ventas'] || 'Sin Técnico';
 
@@ -1419,7 +1475,7 @@
 
       noRealizadas.forEach(d => {
         const tec = d['Usuario'] || d['Técnico'] || d['Tecnico'] || '-';
-        const fecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || '-';
+        const fecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha Ejecución'] || '-';
         const cliente = d['Nombre de Fantasia'] || d['Nombre Fantasia'] || d['Cliente'] || d['Nombre Receptor'] || d['Oficina'] || '-';
         
         const motivo = d['Resuelto'] || d['Motivo No Servicio'] || d['motivo_no_servicio'] || 'Sin Especificar';
@@ -1455,7 +1511,6 @@
       document.getElementById('tabla-no-realizadas-container').innerHTML = html;
     }
 
-    /* Tabla adicional de casos SI resueltos exclusiva para Urgencias */
     function renderTablaSiRealizadas(data) {
       const siRealizadas = data.filter(d => isServicioRealizado(d));
 
@@ -1480,7 +1535,7 @@
 
       siRealizadas.forEach(d => {
         const tec = d['Usuario'] || d['Técnico'] || d['Tecnico'] || '-';
-        const fecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || '-';
+        const fecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha Ejecución'] || '-';
         const cliente = d['Nombre de Fantasia'] || d['Nombre Fantasia'] || d['Cliente'] || d['Oficina'] || '-';
         const receptor = d['Nombre Receptor Local'] || d['Nombre Receptor'] || '-';
         const comentario = d['Comentario Producto dete'] || d['Comentario Motivo'] || d['Comentario'] || 'Problema resuelto satisfactoriamente';
