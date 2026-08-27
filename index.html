@@ -788,7 +788,6 @@
     }
 
     // Extractor de Tipo de Activo para Gráficos y Tablas:
-    // Mantiene Schop / Post Mix para el gráfico de Dona en ambas pestañas.
     function getTipoActivo(d) {
       const val = d['Tipo de Activo'] || d['Tipo de Activo '] || d['Activos'] || d['Categoria'] || d['Categoría'] || d['Tipo Urgencia'] || '';
       const str = String(val).toUpperCase();
@@ -797,7 +796,7 @@
       return val || 'Post Mix';
     }
 
-    // Clasificador exclusivo para Desglose por Técnico en Urgencias (Ruta vs Camioneta)
+    // Clasificador exclusivo para Desglose por Técnico en Urgencias (Ruta vs Camionetas)
     function getCategoriaTecnico(d) {
       if (currentSheetKey === "urgencias") {
         const usr = String(d['Usuario'] || d['usuario'] || '').toUpperCase().trim();
@@ -840,7 +839,7 @@
           $('#kpi-label-3').text('Casos No Resueltos');
           $('#kpi-subtext-legend').html('<span style="color:#006100; font-weight:bold;">● Schop</span> | <span style="color:#004b93; font-weight:bold;">● Post Mix</span>');
           $('#tabla-1-title').text('Resumen por Tipo de Activo');
-          $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Resueltas)');
+          $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (Resueltas vs No)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle de Urgencias No Resueltas');
           $('#container-si-realizadas').show();
         } else {
@@ -1106,7 +1105,6 @@
           totalNO += qty;
         }
 
-        // Gráfico de dona siempre mantenido por Schop / Post Mix
         const tipo = getTipoActivo(d).toUpperCase();
         if (tipo.includes('SCHOP')) {
           countSchop += qty;
@@ -1196,6 +1194,7 @@
       });
     }
 
+    /* Gráfico de Evolución Mensual Apilado (Verde SI vs Gris NO) con Totales y Cantidades */
     function renderTrendChart() {
       const monthlyStats = {};
 
@@ -1230,13 +1229,22 @@
           labels: labels,
           datasets: [
             {
-              label: '% Efectividad SI',
+              label: 'Resueltas (SI)',
               data: labels.map(m => {
                 const tot = monthlyStats[m].SI + monthlyStats[m].NO;
                 return tot > 0 ? parseFloat(((monthlyStats[m].SI / tot) * 100).toFixed(1)) : 0;
               }),
               backgroundColor: '#006100',
-              borderRadius: 3
+              borderRadius: 2
+            },
+            {
+              label: 'No Resueltas (NO)',
+              data: labels.map(m => {
+                const tot = monthlyStats[m].SI + monthlyStats[m].NO;
+                return tot > 0 ? parseFloat(((monthlyStats[m].NO / tot) * 100).toFixed(1)) : 0;
+              }),
+              backgroundColor: '#7f8c8d',
+              borderRadius: 2
             }
           ]
         },
@@ -1245,24 +1253,30 @@
           maintainAspectRatio: false,
           scales: {
             x: {
+              stacked: true,
               grid: { display: false },
               ticks: { font: { size: 10, weight: 'bold' }, color: '#333333' }
             },
-            y: { display: false, max: 115 }
+            y: {
+              stacked: true,
+              display: false,
+              max: 115
+            }
           },
           plugins: {
             legend: { display: false },
             datalabels: {
               display: true,
+              formatter: function(value, context) {
+                const m = labels[context.dataIndex];
+                const isSI = context.datasetIndex === 0;
+                const cant = isSI ? monthlyStats[m].SI : monthlyStats[m].NO;
+                return value > 0 ? `${value}%\n(${cant})` : '';
+              },
               color: '#ffffff',
               textStrokeColor: '#000000',
-              textStrokeWidth: 2,
-              font: { weight: 'bold', size: 10 },
-              formatter: function(value, context) {
-                const mes = labels[context.dataIndex];
-                const totalServicios = monthlyStats[mes].SI + monthlyStats[mes].NO;
-                return `${value}%\n(${totalServicios})`;
-              },
+              textStrokeWidth: 1.5,
+              font: { weight: 'bold', size: 9 },
               align: 'center',
               anchor: 'center'
             },
@@ -1270,9 +1284,10 @@
               callbacks: {
                 label: function(ctx) {
                   const m = ctx.label;
-                  const cantSI = monthlyStats[m].SI;
-                  const tot = monthlyStats[m].SI + monthlyStats[m].NO;
-                  return `${m}: ${cantSI}/${tot} resueltos (${ctx.raw}%)`;
+                  const isSI = ctx.datasetIndex === 0;
+                  const cant = isSI ? monthlyStats[m].SI : monthlyStats[m].NO;
+                  const labelName = isSI ? 'Resueltas' : 'No Resueltas';
+                  return `${labelName}: ${cant} casos (${ctx.raw}%)`;
                 }
               }
             }
