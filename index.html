@@ -779,7 +779,7 @@
         <div id="tabla-1-container"></div>
       </div>
 
-      <!-- NUEVA TABLA: Resumen de Motivos de No Servicio -->
+      <!-- Tabla Resumen de Motivos de No Servicio (Actualizada con 2 Porcentajes) -->
       <div class="table-container">
         <div class="table-header" style="background-color: #fff8e1; color: #b78103;">
           <span id="tabla-motivos-title"><i class="fa-solid fa-list-check"></i> Resumen de Motivos (No Realizados / No Resueltos)</span>
@@ -1235,7 +1235,7 @@
       renderActivosChart(countSchop, countPostMix);
       renderTrendChart();
       renderTabla1(data);
-      renderTablaMotivos(data, totalNO); // Nueva Tabla
+      renderTablaMotivos(data, totalNO, grandTotal); // Se pasa grandTotal para la nueva columna
       renderTabla2(data);
       renderTablaNoRealizadas(data);
       
@@ -1327,7 +1327,6 @@
       }
 
       if (currentSheetKey === "urgencias") {
-        // En Urgencias: Muestra % sobre la barra verde y (Total) justo debajo
         trendChartInstance = new Chart(ctx, {
           type: 'bar',
           data: {
@@ -1402,7 +1401,6 @@
           }]
         });
       } else {
-        // En Ruta Preventiva: Vista Original Limpia (% Centrado en barra verde)
         trendChartInstance = new Chart(ctx, {
           type: 'bar',
           data: {
@@ -1519,8 +1517,8 @@
       document.getElementById('tabla-1-container').innerHTML = html1;
     }
 
-    /* NUEVA FUNCIÓN: Renders de la Tabla Resumen de Motivos de No Servicio */
-    function renderTablaMotivos(data, totalNO) {
+    /* TABLA RESUMEN DE MOTIVOS CON AMBAS COLUMNAS DE PORCENTAJE */
+    function renderTablaMotivos(data, totalNO, grandTotal) {
       const motivosStats = {};
       const noRealizadasData = data.filter(d => !isServicioRealizado(d));
 
@@ -1531,7 +1529,6 @@
         motivosStats[motivo] += qty;
       });
 
-      // Ordenar motivos de mayor a menor cantidad
       const motivosOrdenados = Object.keys(motivosStats).sort((a, b) => motivosStats[b] - motivosStats[a]);
 
       let html = `
@@ -1541,6 +1538,7 @@
               <th class="left">Motivo No Servicio / Causa</th>
               <th>Cantidad Servicios</th>
               <th>% del Total NO</th>
+              <th>% del Total General</th>
             </tr>
           </thead>
           <tbody>`;
@@ -1548,27 +1546,32 @@
       if (motivosOrdenados.length === 0) {
         html += `
           <tr>
-            <td colspan="3" class="no-data">🎉 Sin servicios no realizados para los filtros seleccionados.</td>
+            <td colspan="4" class="no-data">🎉 Sin servicios no realizados para los filtros seleccionados.</td>
           </tr>`;
       } else {
         motivosOrdenados.forEach(motivo => {
           const cant = motivosStats[motivo];
-          const pct = totalNO > 0 ? ((cant / totalNO) * 100).toFixed(1) + '%' : '0.0%';
+          const pctDelNO = totalNO > 0 ? ((cant / totalNO) * 100).toFixed(1) + '%' : '0.0%';
+          const pctDelTotal = grandTotal > 0 ? ((cant / grandTotal) * 100).toFixed(1) + '%' : '0.0%';
 
           html += `
             <tr>
               <td class="left">• <strong>${motivo}</strong></td>
               <td><strong>${cant}</strong></td>
-              <td><span class="qty-badge" style="font-weight:bold; color:#c62828;">${pct}</span></td>
+              <td><span class="qty-badge" style="font-weight:bold; color:#c62828;">${pctDelNO}</span></td>
+              <td><span class="qty-badge" style="font-weight:bold; color:var(--excel-green-dark);">${pctDelTotal}</span></td>
             </tr>`;
         });
       }
+
+      const totalPctNO_General = grandTotal > 0 ? ((totalNO / grandTotal) * 100).toFixed(1) + '%' : '0.0%';
 
       html += `
         <tr class="total-general">
           <td class="left">Total No Atendidos / No Resueltos</td>
           <td>${totalNO}</td>
           <td>100%</td>
+          <td>${totalPctNO_General}</td>
         </tr>
         </tbody></table>`;
 
