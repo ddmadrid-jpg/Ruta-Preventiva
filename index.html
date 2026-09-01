@@ -771,11 +771,20 @@
   <!-- Grid Principal -->
   <div class="dashboard-grid">
     <div class="left-column">
+      <!-- Tabla 1: Resumen por Tipo de Activo -->
       <div class="table-container">
         <div class="table-header">
           <span id="tabla-1-title">Resumen por Tipo de Activo</span>
         </div>
         <div id="tabla-1-container"></div>
+      </div>
+
+      <!-- NUEVA TABLA: Resumen de Motivos de No Servicio -->
+      <div class="table-container">
+        <div class="table-header" style="background-color: #fff8e1; color: #b78103;">
+          <span id="tabla-motivos-title"><i class="fa-solid fa-list-check"></i> Resumen de Motivos (No Realizados / No Resueltos)</span>
+        </div>
+        <div id="tabla-motivos-container"></div>
       </div>
 
       <!-- Tabla No Realizados / No Resueltos -->
@@ -897,6 +906,10 @@
       return d['Nombre Fantasía'] || d['Nombre Fantasía '] || d['Nombre de Fantasia'] || d['Nombre Fantasia'] || d['Cliente'] || d['Nombre Receptor'] || d['Oficina'] || '-';
     }
 
+    function getMotivoNoServicio(d) {
+      return d['Motivo No Servicio'] || d['motivo_no_servicio'] || d['Resuelto'] || d['Motivo'] || 'Sin Especificar';
+    }
+
     $(document).ready(function() {
       flatpickr.localize(flatpickr.l10ns.es);
       flatpickr("#filter-fecha-inicio", { dateFormat: "Y-m-d", onChange: renderDashboard });
@@ -923,6 +936,7 @@
           $('#kpi-label-3').text('Casos No Resueltos');
           $('#kpi-subtext-legend').html('<span style="color:#006100; font-weight:bold;">● Schop</span> | <span style="color:#004b93; font-weight:bold;">● Post Mix</span>');
           $('#tabla-1-title').text('Resumen por Tipo de Activo');
+          $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen de Motivos No Resueltos');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Resueltas)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle de Urgencias No Resueltas');
           $('#container-si-realizadas').show();
@@ -933,6 +947,7 @@
           $('#kpi-label-3').text('Visitas No Realizadas');
           $('#kpi-subtext-legend').html('<span style="color:#006100; font-weight:bold;">● Schop</span> | <span style="color:#004b93; font-weight:bold;">● Post Mix</span>');
           $('#tabla-1-title').text('Resumen por Tipo de Activo');
+          $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen de Motivos No Realizados');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% SI)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Justificación Visita No Realizada');
           $('#container-si-realizadas').hide();
@@ -1220,6 +1235,7 @@
       renderActivosChart(countSchop, countPostMix);
       renderTrendChart();
       renderTabla1(data);
+      renderTablaMotivos(data, totalNO); // Nueva Tabla
       renderTabla2(data);
       renderTablaNoRealizadas(data);
       
@@ -1503,6 +1519,62 @@
       document.getElementById('tabla-1-container').innerHTML = html1;
     }
 
+    /* NUEVA FUNCIÓN: Renders de la Tabla Resumen de Motivos de No Servicio */
+    function renderTablaMotivos(data, totalNO) {
+      const motivosStats = {};
+      const noRealizadasData = data.filter(d => !isServicioRealizado(d));
+
+      noRealizadasData.forEach(d => {
+        const qty = getServiciosQty(d);
+        const motivo = getMotivoNoServicio(d);
+        if (!motivosStats[motivo]) motivosStats[motivo] = 0;
+        motivosStats[motivo] += qty;
+      });
+
+      // Ordenar motivos de mayor a menor cantidad
+      const motivosOrdenados = Object.keys(motivosStats).sort((a, b) => motivosStats[b] - motivosStats[a]);
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th class="left">Motivo No Servicio / Causa</th>
+              <th>Cantidad Servicios</th>
+              <th>% del Total NO</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      if (motivosOrdenados.length === 0) {
+        html += `
+          <tr>
+            <td colspan="3" class="no-data">🎉 Sin servicios no realizados para los filtros seleccionados.</td>
+          </tr>`;
+      } else {
+        motivosOrdenados.forEach(motivo => {
+          const cant = motivosStats[motivo];
+          const pct = totalNO > 0 ? ((cant / totalNO) * 100).toFixed(1) + '%' : '0.0%';
+
+          html += `
+            <tr>
+              <td class="left">• <strong>${motivo}</strong></td>
+              <td><strong>${cant}</strong></td>
+              <td><span class="qty-badge" style="font-weight:bold; color:#c62828;">${pct}</span></td>
+            </tr>`;
+        });
+      }
+
+      html += `
+        <tr class="total-general">
+          <td class="left">Total No Atendidos / No Resueltos</td>
+          <td>${totalNO}</td>
+          <td>100%</td>
+        </tr>
+        </tbody></table>`;
+
+      document.getElementById('tabla-motivos-container').innerHTML = html;
+    }
+
     function renderTabla2(data) {
       const t2Stats = {};
       data.forEach(d => {
@@ -1626,7 +1698,7 @@
         const fecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
         const cliente = getNombreCliente(d);
         
-        const motivo = d['Resuelto'] || d['Motivo No Servicio'] || d['motivo_no_servicio'] || 'Sin Especificar';
+        const motivo = getMotivoNoServicio(d);
         const comentario = d['Comentario No Resuelto'] || d['Comentario Motivo'] || d['Comentario'] || '-';
         
         const fotoUrl1 = d['Foto Equipo'] || d['Foto Motivo'] || d['Foto Columnas o Post Mix'] || '';
