@@ -48,8 +48,8 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(4px);
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(6px);
       z-index: 99999;
       display: flex;
       flex-direction: column;
@@ -59,52 +59,72 @@
       transition: opacity 0.3s ease;
     }
 
-    /* Animación del Vaso de Cerveza */
-    .beer-glass {
-      width: 60px;
-      height: 90px;
-      border: 4px solid #333;
-      border-bottom-left-radius: 12px;
-      border-bottom-right-radius: 12px;
+    /* Vaso de Cerveza / Chopp Ultra Realista en SVG */
+    .beer-loader-wrap {
+      width: 110px;
+      height: 130px;
       position: relative;
-      overflow: hidden;
-      background: #fff;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
-    .beer-foam {
-      position: absolute;
-      top: 0;
-      left: 0;
+    .beer-svg {
       width: 100%;
-      height: 16px;
-      background: #ffffff;
-      border-bottom: 2px solid #e0e0e0;
-      z-index: 2;
+      height: 100%;
+      filter: drop-shadow(0px 8px 16px rgba(0,0,0,0.18));
     }
 
-    .beer-liquid {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 0%;
-      background: linear-gradient(180deg, #f5b041 0%, #d35400 100%);
-      animation: fillBeer 1.6s infinite ease-in-out;
+    /* Animación del líquido sirviéndose */
+    .beer-liquid-path {
+      animation: fillBeerAnimation 2s infinite ease-in-out;
+      transform-origin: bottom;
     }
 
-    @keyframes fillBeer {
-      0% { height: 0%; }
-      75% { height: 85%; }
-      100% { height: 85%; }
+    @keyframes fillBeerAnimation {
+      0% { transform: scaleY(0.05); }
+      70% { transform: scaleY(0.95); }
+      100% { transform: scaleY(0.95); }
+    }
+
+    /* Animación de la espuma rebalsando suavemente */
+    .beer-foam-group {
+      animation: foamRiseAnimation 2s infinite ease-in-out;
+    }
+
+    @keyframes foamRiseAnimation {
+      0% { transform: translateY(75px); opacity: 0; }
+      20% { opacity: 1; }
+      70% { transform: translateY(0px); opacity: 1; }
+      100% { transform: translateY(0px); opacity: 1; }
+    }
+
+    /* Animación de las Burbujas Flotantes */
+    .bubble {
+      animation: bubbleFloat 1.8s infinite linear;
+      fill: #ffffff;
+      opacity: 0.6;
+    }
+    .b1 { animation-delay: 0.2s; }
+    .b2 { animation-delay: 0.5s; }
+    .b3 { animation-delay: 0.9s; }
+    .b4 { animation-delay: 1.3s; }
+
+    @keyframes bubbleFloat {
+      0% { transform: translateY(0px); opacity: 0; }
+      30% { opacity: 0.8; }
+      100% { transform: translateY(-55px); opacity: 0; }
     }
 
     .loader-text {
-      margin-top: 18px;
+      margin-top: 14px;
       font-size: 15px;
       font-weight: 700;
       color: var(--excel-green-dark);
       letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     /* Encabezado Principal */
@@ -595,13 +615,67 @@
 </head>
 <body>
 
-  <!-- Overlay Loader Temático de Cerveza -->
+  <!-- Overlay Loader Temático de Cerveza en Chopp de Vidrio Realista -->
   <div id="loader-overlay">
-    <div class="beer-glass">
-      <div class="beer-foam"></div>
-      <div class="beer-liquid"></div>
+    <div class="beer-loader-wrap">
+      <svg class="beer-svg" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- Degradado Cerveza Dorado -->
+          <linearGradient id="beerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#f39c12"/>
+            <stop offset="30%" stop-color="#f1c40f"/>
+            <stop offset="70%" stop-color="#e67e22"/>
+            <stop offset="100%" stop-color="#d35400"/>
+          </linearGradient>
+
+          <!-- Degradado Cristal de Vaso -->
+          <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="rgba(255,255,255,0.6)"/>
+            <stop offset="20%" stop-color="rgba(255,255,255,0.2)"/>
+            <stop offset="80%" stop-color="rgba(255,255,255,0.1)"/>
+            <stop offset="100%" stop-color="rgba(255,255,255,0.5)"/>
+          </linearGradient>
+
+          <!-- Máscara del Cuerpo del Vaso -->
+          <mask id="glassMask">
+            <path d="M 25,20 L 30,105 C 30,110 35,112 40,112 L 68,112 C 73,112 78,110 78,105 L 83,20 Z" fill="#ffffff"/>
+          </mask>
+        </defs>
+
+        <!-- Asa / Oreja del Schop de Cerveza -->
+        <path d="M 26,32 C 8,32 6,75 27,82" fill="none" stroke="#2c3e50" stroke-width="7" stroke-linecap="round"/>
+        <path d="M 26,32 C 8,32 6,75 27,82" fill="none" stroke="#ecf0f1" stroke-width="3" stroke-linecap="round"/>
+
+        <!-- Cristal Base Fondo -->
+        <path d="M 25,20 L 30,105 C 30,110 35,112 40,112 L 68,112 C 73,112 78,110 78,105 L 83,20 Z" fill="#ffffff" opacity="0.3" stroke="#2c3e50" stroke-width="3"/>
+
+        <!-- Líquido Cerveza Dorado Animado -->
+        <g mask="url(#glassMask)">
+          <rect class="beer-liquid-path" x="10" y="20" width="88" height="95" fill="url(#beerGrad)"/>
+          
+          <!-- Burbujas Flotando dentro del chopp -->
+          <circle class="bubble b1" cx="42" cy="100" r="2.5"/>
+          <circle class="bubble b2" cx="58" cy="105" r="2"/>
+          <circle class="bubble b3" cx="50" cy="98" r="3"/>
+          <circle class="bubble b4" cx="66" cy="102" r="1.8"/>
+
+          <!-- Espuma Esponjosa de Cerveza Animada -->
+          <g class="beer-foam-group">
+            <path d="M 20,25 C 25,15 35,15 40,22 C 45,14 58,14 62,22 C 68,15 78,16 82,25 L 85,35 L 20,35 Z" fill="#ffffff"/>
+            <ellipse cx="36" cy="22" rx="7" ry="5" fill="#ffffff"/>
+            <ellipse cx="52" cy="20" rx="9" ry="6" fill="#ffffff"/>
+            <ellipse cx="68" cy="22" rx="7" ry="5" fill="#ffffff"/>
+          </g>
+        </g>
+
+        <!-- Contorno de Cristal del Vaso + Brillos de condensación -->
+        <path d="M 25,20 L 30,105 C 30,110 35,112 40,112 L 68,112 C 73,112 78,110 78,105 L 83,20 Z" fill="url(#glassGrad)" stroke="#2c3e50" stroke-width="3.5"/>
+        
+        <!-- Línea Reflejo de Vidrio Frío -->
+        <path d="M 33,26 L 36,100" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+      </svg>
     </div>
-    <div class="loader-text"><i class="fa-solid fa-arrows-rotate fa-spin"></i> Cargando información...</div>
+    <div class="loader-text"><i class="fa-solid fa-beer-mug-empty fa-bounce" style="color: #d35400;"></i> Sirviendo información...</div>
   </div>
 
   <!-- Encabezado Principal -->
@@ -1235,7 +1309,7 @@
       renderActivosChart(countSchop, countPostMix);
       renderTrendChart();
       renderTabla1(data);
-      renderTablaMotivos(data, totalNO, grandTotal); // Se pasa grandTotal para la nueva columna
+      renderTablaMotivos(data, totalNO, grandTotal);
       renderTabla2(data);
       renderTablaNoRealizadas(data);
       
@@ -1297,7 +1371,6 @@
       });
     }
 
-    /* Gráfico de Evolución Mensual Adaptativo */
     function renderTrendChart() {
       const monthlyStats = {};
 
@@ -1517,7 +1590,6 @@
       document.getElementById('tabla-1-container').innerHTML = html1;
     }
 
-    /* TABLA RESUMEN DE MOTIVOS CON AMBAS COLUMNAS DE PORCENTAJE */
     function renderTablaMotivos(data, totalNO, grandTotal) {
       const motivosStats = {};
       const noRealizadasData = data.filter(d => !isServicioRealizado(d));
