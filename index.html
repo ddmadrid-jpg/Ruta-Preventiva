@@ -858,7 +858,7 @@
         <div class="scrollable-table" id="tabla-no-realizadas-container"></div>
       </div>
 
-      <!-- Tabla: Detalle de Servicios Realizados (SI) Exclusiva para Ruta Preventiva -->
+      <!-- TABLA: Detalle de Servicios Realizados (SI) Exclusiva para Ruta Preventiva -->
       <div class="table-container" id="container-si-realizadas">
         <div class="table-header" style="background-color: #e8f5e9; color: var(--excel-green-dark);">
           <span id="tabla-si-title"><i class="fa-solid fa-circle-check"></i> Detalle de Servicios Realizados (SI)</span>
@@ -985,8 +985,6 @@
       return d['Foto Columnas o Post Mix'] || d['Foto Equipo'] || d['Foto Motivo'] || d['Foto Salida FNE'] || '';
     }
 
-    // Normalizador de Motivos de No Servicio:
-    // Unifica "Sin Especificar", "Sin Información", vacíos, etc., bajo "Sin Información"
     function getMotivoNoServicio(d) {
       const raw = (d['Motivo No Servicio'] || d['motivo_no_servicio'] || d['Resuelto'] || d['Motivo'] || '').trim();
       const strUpper = raw.toUpperCase();
@@ -1032,7 +1030,7 @@
           $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen de Motivos No Resueltos');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Resueltas)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle de Urgencias No Resueltas');
-          $('#container-si-realizadas').hide();
+          $('#container-si-realizadas').hide(); // EXCLUSIVO PARA RUTA PREVENTIVA
         } else {
           $('#main-title').html('<i class="fa-solid fa-chart-line" style="font-size: 20px; color: var(--primary-green);"></i> Dashboard Ruta Preventiva');
           $('#kpi-label-1').text('Total Servicios');
@@ -1043,7 +1041,7 @@
           $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen de Motivos No Realizados');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% SI)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Justificación Visita No Realizada');
-          $('#container-si-realizadas').show();
+          $('#container-si-realizadas').show(); // VISIBLE SOLO EN RUTA PREVENTIVA
           $('#tabla-si-title').html('<i class="fa-solid fa-circle-check"></i> Detalle de Servicios Realizados (SI)');
         }
 
@@ -1682,6 +1680,7 @@
       document.getElementById('tabla-motivos-container').innerHTML = html;
     }
 
+    /* REGLA DE RUTA PREVENTIVA: ORDEN POR CÓDIGO Y TRATAMIENTO DE STCYG34 EN "HÍBRIDO" */
     function renderTabla2(data) {
       const t2Stats = {};
       data.forEach(d => {
@@ -1716,9 +1715,34 @@
 
       let grandNO = 0, grandSI = 0;
 
-      Object.keys(t2Stats).forEach(cat => {
+      // En Ruta Preventiva se extrae STCYG34 para moverlo al final a la nueva categoría "Híbrido"
+      let stcyg34Data = null;
+      if (currentSheetKey === "preventiva") {
+        stcyg34Data = { Schop: null, PostMix: null };
+        if (t2Stats['Schop'] && t2Stats['Schop']['STCYG34']) {
+          stcyg34Data.Schop = jQuery.extend(true, {}, t2Stats['Schop']['STCYG34']);
+          delete t2Stats['Schop']['STCYG34'];
+        }
+        if (t2Stats['Post Mix'] && t2Stats['Post Mix']['STCYG34']) {
+          stcyg34Data.PostMix = jQuery.extend(true, {}, t2Stats['Post Mix']['STCYG34']);
+          delete t2Stats['Post Mix']['STCYG34'];
+        }
+      }
+
+      // Orden para asegurarnos que Post Mix aparezca ARRIBA de Schop si estamos en Ruta Preventiva
+      let categoriasOrdenadas = Object.keys(t2Stats);
+      if (currentSheetKey === "preventiva") {
+        categoriasOrdenadas.sort((a, b) => {
+          if (a.toUpperCase().includes('POST')) return -1;
+          if (b.toUpperCase().includes('POST')) return 1;
+          return a.localeCompare(b);
+        });
+      }
+
+      categoriasOrdenadas.forEach(cat => {
         let catSI = 0, catNO = 0;
         
+        // Orden numérico de usuarios (STCYG01, STCYG02, etc.)
         const usuariosOrdenados = Object.keys(t2Stats[cat]).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
         usuariosOrdenados.forEach(usr => {
@@ -1761,6 +1785,66 @@
             <td>${catTot} (100%)</td>
           </tr>`;
       });
+
+      // MÓDULO HÍBRIDO (Exclusivo para STCYG34 si está presente en el filtro activo)
+      if (currentSheetKey === "preventiva" && stcyg34Data && (stcyg34Data.Schop || stcyg34Data.PostMix)) {
+        let hibridoSI = 0, hibridoNO = 0;
+
+        // Fila Híbrido - Schop
+        if (stcyg34Data.Schop) {
+          const uData = stcyg34Data.Schop;
+          const tot = uData.SI + uData.NO;
+          hibridoSI += uData.SI;
+          hibridoNO += uData.NO;
+          const pctSI_num = tot > 0 ? (uData.SI / tot) * 100 : 0;
+          const pctNO_num = tot > 0 ? (uData.NO / tot) * 100 : 0;
+
+          html2 += `
+            <tr>
+              <td class="left">• Híbrido (Schop)</td>
+              <td class="left">• STCYG34</td>
+              <td class="left">${uData.tecnico}</td>
+              <td class="${pctSI_num < 92 ? 'alert-red' : ''}">${uData.NO} <span class="qty-badge">(${pctNO_num.toFixed(1)}%)</span></td>
+              <td>${uData.SI} <span class="qty-badge">(${pctSI_num.toFixed(1)}%)</span></td>
+              <td><strong>${tot}</strong> <span class="qty-badge">(100%)</span></td>
+            </tr>`;
+        }
+
+        // Fila Híbrido - Post Mix
+        if (stcyg34Data.PostMix) {
+          const uData = stcyg34Data.PostMix;
+          const tot = uData.SI + uData.NO;
+          hibridoSI += uData.SI;
+          hibridoNO += uData.NO;
+          const pctSI_num = tot > 0 ? (uData.SI / tot) * 100 : 0;
+          const pctNO_num = tot > 0 ? (uData.NO / tot) * 100 : 0;
+
+          html2 += `
+            <tr>
+              <td class="left">• Híbrido (Post Mix)</td>
+              <td class="left">• STCYG34</td>
+              <td class="left">${uData.tecnico}</td>
+              <td class="${pctSI_num < 92 ? 'alert-red' : ''}">${uData.NO} <span class="qty-badge">(${pctNO_num.toFixed(1)}%)</span></td>
+              <td>${uData.SI} <span class="qty-badge">(${pctSI_num.toFixed(1)}%)</span></td>
+              <td><strong>${tot}</strong> <span class="qty-badge">(100%)</span></td>
+            </tr>`;
+        }
+
+        grandSI += hibridoSI;
+        grandNO += hibridoNO;
+
+        const hibTot = hibridoSI + hibridoNO;
+        const hibPctNO = hibTot > 0 ? ((hibridoNO / hibTot) * 100).toFixed(1) + '%' : '0.0%';
+        const hibPctSI = hibTot > 0 ? ((hibridoSI / hibTot) * 100).toFixed(1) + '%' : '0.0%';
+
+        html2 += `
+          <tr class="subtotal" style="background-color: #e3f2fd; color: #0d47a1;">
+            <td colspan="3" class="left">Total Híbrido</td>
+            <td>${hibridoNO} (${hibPctNO})</td>
+            <td>${hibridoSI} (${hibPctSI})</td>
+            <td>${hibTot} (100%)</td>
+          </tr>`;
+      }
 
       const grandALL = grandSI + grandNO;
       const grandPctNO = grandALL > 0 ? ((grandNO / grandALL) * 100).toFixed(1) + '%' : '0.0%';
