@@ -75,7 +75,6 @@
       filter: drop-shadow(0px 8px 16px rgba(0,0,0,0.18));
     }
 
-    /* Animación del líquido sirviéndose */
     .beer-liquid-path {
       animation: fillBeerAnimation 2s infinite ease-in-out;
       transform-origin: bottom;
@@ -87,7 +86,6 @@
       100% { transform: scaleY(0.95); }
     }
 
-    /* Animación de la espuma rebalsando suavemente */
     .beer-foam-group {
       animation: foamRiseAnimation 2s infinite ease-in-out;
     }
@@ -99,7 +97,6 @@
       100% { transform: translateY(0px); opacity: 1; }
     }
 
-    /* Animación de las Burbujas Flotantes */
     .bubble {
       animation: bubbleFloat 1.8s infinite linear;
       fill: #ffffff;
@@ -615,7 +612,7 @@
 </head>
 <body>
 
-  <!-- Overlay Loader Temático de Cerveza en Chopp de Vidrio Realista -->
+  <!-- Overlay Loader Temático de Cerveza -->
   <div id="loader-overlay">
     <div class="beer-loader-wrap">
       <svg class="beer-svg" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
@@ -858,7 +855,7 @@
         <div class="scrollable-table" id="tabla-no-realizadas-container"></div>
       </div>
 
-      <!-- TABLA: Detalle de Servicios Realizados (SI) Exclusiva para Ruta Preventiva -->
+      <!-- Tabla: Detalle de Servicios Realizados (SI) Exclusiva para Ruta Preventiva -->
       <div class="table-container" id="container-si-realizadas">
         <div class="table-header" style="background-color: #e8f5e9; color: var(--excel-green-dark);">
           <span id="tabla-si-title"><i class="fa-solid fa-circle-check"></i> Detalle de Servicios Realizados (SI)</span>
@@ -935,13 +932,15 @@
       return isNaN(num) ? 1 : num;
     }
 
+    // VALIDACIÓN OFICIAL DE REALIZADA EN RUTA PREVENTIVA
     function isServicioRealizado(d) {
       if (currentSheetKey === "urgencias") {
-        const res = (d['Pudo Resolver Problema'] || d['Pudo resolver problema'] || d['Resuelto'] || '').toUpperCase();
+        const res = String(d['Pudo Resolver Problema'] || d['Pudo resolver problema'] || d['Resuelto'] || '').toUpperCase().trim();
         return res === "SI" || res === "1" || res === "RESUELTO";
       } else {
-        const realizada = (d['Realizada 2'] || d['Realizada'] || d['Cumplimiento'] || '').toUpperCase();
-        return realizada === "SI" || realizada === "1" || realizada === "EJECUTADA";
+        // RUTA PREVENTIVA: Se valida siempre por la columna "Realizada" (Fuente Oficial de Verdad)
+        const realizada = String(d['Realizada'] || d['Realizada 2'] || d['Cumplimiento'] || '').toUpperCase().trim();
+        return realizada === "SI" || realizada === "1" || realizada === "EJECUTADA" || realizada === "REALIZADA";
       }
     }
 
@@ -1030,7 +1029,7 @@
           $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen de Motivos No Resueltos');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Resueltas)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle de Urgencias No Resueltas');
-          $('#container-si-realizadas').hide(); // EXCLUSIVO PARA RUTA PREVENTIVA
+          $('#container-si-realizadas').hide();
         } else {
           $('#main-title').html('<i class="fa-solid fa-chart-line" style="font-size: 20px; color: var(--primary-green);"></i> Dashboard Ruta Preventiva');
           $('#kpi-label-1').text('Total Servicios');
@@ -1041,7 +1040,7 @@
           $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen de Motivos No Realizados');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% SI)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Justificación Visita No Realizada');
-          $('#container-si-realizadas').show(); // VISIBLE SOLO EN RUTA PREVENTIVA
+          $('#container-si-realizadas').show();
           $('#tabla-si-title').html('<i class="fa-solid fa-circle-check"></i> Detalle de Servicios Realizados (SI)');
         }
 
@@ -1790,7 +1789,6 @@
       if (currentSheetKey === "preventiva" && stcyg34Data && (stcyg34Data.Schop || stcyg34Data.PostMix)) {
         let hibridoSI = 0, hibridoNO = 0;
 
-        // Fila Híbrido - Schop
         if (stcyg34Data.Schop) {
           const uData = stcyg34Data.Schop;
           const tot = uData.SI + uData.NO;
@@ -1810,7 +1808,6 @@
             </tr>`;
         }
 
-        // Fila Híbrido - Post Mix
         if (stcyg34Data.PostMix) {
           const uData = stcyg34Data.PostMix;
           const tot = uData.SI + uData.NO;
