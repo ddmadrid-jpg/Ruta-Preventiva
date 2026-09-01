@@ -620,7 +620,6 @@
     <div class="beer-loader-wrap">
       <svg class="beer-svg" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <!-- Degradado Cerveza Dorado -->
           <linearGradient id="beerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stop-color="#f39c12"/>
             <stop offset="30%" stop-color="#f1c40f"/>
@@ -628,7 +627,6 @@
             <stop offset="100%" stop-color="#d35400"/>
           </linearGradient>
 
-          <!-- Degradado Cristal de Vaso -->
           <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stop-color="rgba(255,255,255,0.6)"/>
             <stop offset="20%" stop-color="rgba(255,255,255,0.2)"/>
@@ -636,30 +634,24 @@
             <stop offset="100%" stop-color="rgba(255,255,255,0.5)"/>
           </linearGradient>
 
-          <!-- Máscara del Cuerpo del Vaso -->
           <mask id="glassMask">
             <path d="M 25,20 L 30,105 C 30,110 35,112 40,112 L 68,112 C 73,112 78,110 78,105 L 83,20 Z" fill="#ffffff"/>
           </mask>
         </defs>
 
-        <!-- Asa / Oreja del Schop de Cerveza -->
         <path d="M 26,32 C 8,32 6,75 27,82" fill="none" stroke="#2c3e50" stroke-width="7" stroke-linecap="round"/>
         <path d="M 26,32 C 8,32 6,75 27,82" fill="none" stroke="#ecf0f1" stroke-width="3" stroke-linecap="round"/>
 
-        <!-- Cristal Base Fondo -->
         <path d="M 25,20 L 30,105 C 30,110 35,112 40,112 L 68,112 C 73,112 78,110 78,105 L 83,20 Z" fill="#ffffff" opacity="0.3" stroke="#2c3e50" stroke-width="3"/>
 
-        <!-- Líquido Cerveza Dorado Animado -->
         <g mask="url(#glassMask)">
           <rect class="beer-liquid-path" x="10" y="20" width="88" height="95" fill="url(#beerGrad)"/>
           
-          <!-- Burbujas Flotando dentro del chopp -->
           <circle class="bubble b1" cx="42" cy="100" r="2.5"/>
           <circle class="bubble b2" cx="58" cy="105" r="2"/>
           <circle class="bubble b3" cx="50" cy="98" r="3"/>
           <circle class="bubble b4" cx="66" cy="102" r="1.8"/>
 
-          <!-- Espuma Esponjosa de Cerveza Animada -->
           <g class="beer-foam-group">
             <path d="M 20,25 C 25,15 35,15 40,22 C 45,14 58,14 62,22 C 68,15 78,16 82,25 L 85,35 L 20,35 Z" fill="#ffffff"/>
             <ellipse cx="36" cy="22" rx="7" ry="5" fill="#ffffff"/>
@@ -668,10 +660,7 @@
           </g>
         </g>
 
-        <!-- Contorno de Cristal del Vaso + Brillos de condensación -->
         <path d="M 25,20 L 30,105 C 30,110 35,112 40,112 L 68,112 C 73,112 78,110 78,105 L 83,20 Z" fill="url(#glassGrad)" stroke="#2c3e50" stroke-width="3.5"/>
-        
-        <!-- Línea Reflejo de Vidrio Frío -->
         <path d="M 33,26 L 36,100" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
       </svg>
     </div>
@@ -853,7 +842,7 @@
         <div id="tabla-1-container"></div>
       </div>
 
-      <!-- Tabla Resumen de Motivos de No Servicio (Actualizada con 2 Porcentajes) -->
+      <!-- Tabla Resumen de Motivos de No Servicio -->
       <div class="table-container">
         <div class="table-header" style="background-color: #fff8e1; color: #b78103;">
           <span id="tabla-motivos-title"><i class="fa-solid fa-list-check"></i> Resumen de Motivos (No Realizados / No Resueltos)</span>
@@ -869,10 +858,10 @@
         <div class="scrollable-table" id="tabla-no-realizadas-container"></div>
       </div>
 
-      <!-- Tabla de Servicios Resueltos (Exclusiva de Urgencias) -->
-      <div class="table-container" id="container-si-realizadas" style="display: none;">
+      <!-- NUEVA TABLA: Detalle de Servicios Realizados (SI) Exclusiva para Ruta Preventiva -->
+      <div class="table-container" id="container-si-realizadas">
         <div class="table-header" style="background-color: #e8f5e9; color: var(--excel-green-dark);">
-          <span><i class="fa-solid fa-circle-check"></i> Detalle de Urgencias Resueltas Exitosamente</span>
+          <span id="tabla-si-title"><i class="fa-solid fa-circle-check"></i> Detalle de Servicios Realizados (SI)</span>
         </div>
         <div class="scrollable-table" id="tabla-si-realizadas-container"></div>
       </div>
@@ -980,6 +969,22 @@
       return d['Nombre Fantasía'] || d['Nombre Fantasía '] || d['Nombre de Fantasia'] || d['Nombre Fantasia'] || d['Cliente'] || d['Nombre Receptor'] || d['Oficina'] || '-';
     }
 
+    function getIdCCU(d) {
+      return d['ID CCU'] || d['ID'] || d['Id CCU'] || d['ID Cliente (Manual)'] || d['ID Cliente (Escaneado)'] || d['id_ccu'] || '-';
+    }
+
+    function getNombreReceptor(d) {
+      return d['Nombre Receptor'] || d['Nombre Receptor Local'] || d['Receptor'] || '-';
+    }
+
+    function getComentarioCliente(d) {
+      return d['Comentario'] || d['Comentario Motivo'] || d['Comentario Producto dete'] || d['Observaciones'] || '-';
+    }
+
+    function getFotoEquipoColumna(d) {
+      return d['Foto Columnas o Post Mix'] || d['Foto Equipo'] || d['Foto Motivo'] || d['Foto Salida FNE'] || '';
+    }
+
     function getMotivoNoServicio(d) {
       return d['Motivo No Servicio'] || d['motivo_no_servicio'] || d['Resuelto'] || d['Motivo'] || 'Sin Especificar';
     }
@@ -1014,6 +1019,7 @@
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Resueltas)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle de Urgencias No Resueltas');
           $('#container-si-realizadas').show();
+          $('#tabla-si-title').html('<i class="fa-solid fa-circle-check"></i> Detalle de Urgencias Resueltas Exitosamente');
         } else {
           $('#main-title').html('<i class="fa-solid fa-chart-line" style="font-size: 20px; color: var(--primary-green);"></i> Dashboard Ruta Preventiva');
           $('#kpi-label-1').text('Total Servicios');
@@ -1024,7 +1030,8 @@
           $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen de Motivos No Realizados');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% SI)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Justificación Visita No Realizada');
-          $('#container-si-realizadas').hide();
+          $('#container-si-realizadas').show();
+          $('#tabla-si-title').html('<i class="fa-solid fa-circle-check"></i> Detalle de Servicios Realizados (SI)');
         }
 
         resetFiltersState();
@@ -1312,10 +1319,7 @@
       renderTablaMotivos(data, totalNO, grandTotal);
       renderTabla2(data);
       renderTablaNoRealizadas(data);
-      
-      if (currentSheetKey === "urgencias") {
-        renderTablaSiRealizadas(data);
-      }
+      renderTablaSiRealizadas(data);
     }
 
     function renderActivosChart(schop, postMix) {
@@ -1371,6 +1375,7 @@
       });
     }
 
+    /* Gráfico de Evolución Mensual Adaptativo */
     function renderTrendChart() {
       const monthlyStats = {};
 
@@ -1806,11 +1811,12 @@
       document.getElementById('tabla-no-realizadas-container').innerHTML = html;
     }
 
+    /* DETALLE DE SERVICIOS REALIZADOS (SI) EN RUTA PREVENTIVA */
     function renderTablaSiRealizadas(data) {
       const siRealizadas = data.filter(d => isServicioRealizado(d));
 
       if (siRealizadas.length === 0) {
-        document.getElementById('tabla-si-realizadas-container').innerHTML = `<div class="no-data">Sin casos resueltos con los filtros seleccionados.</div>`;
+        document.getElementById('tabla-si-realizadas-container').innerHTML = `<div class="no-data">Sin servicios realizados con los filtros seleccionados.</div>`;
         return;
       }
 
@@ -1820,10 +1826,11 @@
             <tr>
               <th class="left">Técnico</th>
               <th class="left">Fecha</th>
-              <th class="left">Cliente</th>
-              <th class="left">Receptor Local</th>
-              <th class="left">Comentario Resuelto</th>
-              <th style="text-align:center;">Fotos</th>
+              <th class="left">ID CCU</th>
+              <th class="left">Cliente (Nombre Fantasía)</th>
+              <th class="left">Nombre Receptor</th>
+              <th class="left">Comentario Cliente</th>
+              <th style="text-align:center;">Foto Columnas / Post Mix</th>
             </tr>
           </thead>
           <tbody>`;
@@ -1831,33 +1838,30 @@
       siRealizadas.forEach(d => {
         const tec = d['Usuario'] || d['Técnico'] || d['Tecnico'] || '-';
         const fecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
+        const idCCU = getIdCCU(d);
         const cliente = getNombreCliente(d);
-        const receptor = d['Nombre Receptor Local'] || d['Nombre Receptor'] || '-';
-        const comentario = d['Comentario Producto dete'] || d['Comentario Motivo'] || d['Comentario'] || 'Problema resuelto satisfactoriamente';
+        const receptor = getNombreReceptor(d);
+        const comentario = getComentarioCliente(d);
         
-        const fotoUrl1 = d['Foto Equipo'] || d['Foto Motivo'] || '';
-        const fotoUrl2 = d['Foto Equipo 2'] || '';
+        const fotoUrl = getFotoEquipoColumna(d);
 
-        let fotosHtml = '<span style="color:#bbb;">Sin fotos</span>';
-        if ((fotoUrl1 && fotoUrl1.startsWith('http')) || (fotoUrl2 && fotoUrl2.startsWith('http'))) {
-          fotosHtml = '<div class="photos-flex">';
-          if (fotoUrl1 && fotoUrl1.startsWith('http')) {
-            fotosHtml += `<div class="img-container"><img src="${fotoUrl1}" class="thumb-img" alt="Foto 1" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'"></div>`;
-          }
-          if (fotoUrl2 && fotoUrl2.startsWith('http')) {
-            fotosHtml += `<div class="img-container"><img src="${fotoUrl2}" class="thumb-img" alt="Foto 2" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'"></div>`;
-          }
-          fotosHtml += '</div>';
+        let fotoHtml = '<span style="color:#bbb;">Sin fotos</span>';
+        if (fotoUrl && fotoUrl.startsWith('http')) {
+          fotoHtml = `
+            <div class="img-container">
+              <img src="${fotoUrl}" class="thumb-img" alt="Foto Columnas o Post Mix" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'">
+            </div>`;
         }
 
         html += `
           <tr>
             <td class="left"><strong>${tec}</strong></td>
             <td class="left">${fecha}</td>
+            <td class="left" style="font-weight: 500;">${idCCU}</td>
             <td class="left">${cliente}</td>
             <td class="left" style="font-weight: 500;">${receptor}</td>
             <td class="left" style="font-size: 11px; color: #2e7d32;">${comentario}</td>
-            <td style="text-align:center;">${fotosHtml}</td>
+            <td style="text-align:center;">${fotoHtml}</td>
           </tr>`;
       });
 
