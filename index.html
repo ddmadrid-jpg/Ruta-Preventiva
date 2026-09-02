@@ -75,6 +75,7 @@
       filter: drop-shadow(0px 8px 16px rgba(0,0,0,0.18));
     }
 
+    /* Animación del líquido sirviéndose */
     .beer-liquid-path {
       animation: fillBeerAnimation 2s infinite ease-in-out;
       transform-origin: bottom;
@@ -86,6 +87,7 @@
       100% { transform: scaleY(0.95); }
     }
 
+    /* Animación de la espuma rebalsando suavemente */
     .beer-foam-group {
       animation: foamRiseAnimation 2s infinite ease-in-out;
     }
@@ -97,6 +99,7 @@
       100% { transform: translateY(0px); opacity: 1; }
     }
 
+    /* Animación de las Burbujas Flotantes */
     .bubble {
       animation: bubbleFloat 1.8s infinite linear;
       fill: #ffffff;
@@ -136,6 +139,12 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
     .header-title h1 {
       margin: 0;
       color: var(--excel-green-dark);
@@ -145,6 +154,19 @@
       align-items: center;
       gap: 10px;
       letter-spacing: -0.3px;
+    }
+
+    /* Subtexto Informativo Gris */
+    .update-subtext {
+      font-size: 12px;
+      color: #6c757d;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-left: 2px solid #e0e0e0;
+      padding-left: 14px;
+      margin-top: 2px;
     }
 
     .status-badge {
@@ -465,26 +487,28 @@
       color: #fff;
     }
 
-    /* Layout principal */
+    /* Layout principal reestructurado */
     .dashboard-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .grid-row-two-col {
       display: flex;
       gap: 24px;
       flex-wrap: wrap;
       align-items: flex-start;
-      margin-bottom: 24px;
     }
 
-    .left-column {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
+    .grid-col-half {
       flex: 1;
       min-width: 380px;
     }
 
-    .right-column {
-      flex: 1.2;
-      min-width: 420px;
+    .grid-row-full {
+      width: 100%;
     }
 
     .table-container {
@@ -666,8 +690,14 @@
 
   <!-- Encabezado Principal -->
   <div class="header-bar">
-    <div class="header-title">
-      <h1 id="main-title"><i class="fa-solid fa-chart-line" style="font-size: 20px; color: var(--primary-green);"></i> Dashboard Ruta Preventiva</h1>
+    <div class="header-left">
+      <div class="header-title">
+        <h1 id="main-title"><i class="fa-solid fa-chart-line" style="font-size: 20px; color: var(--primary-green);"></i> Dashboard Ruta Preventiva</h1>
+      </div>
+      <!-- Texto Informativo en Gris Estilo Submenú -->
+      <div class="update-subtext">
+        <i class="fa-regular fa-clock"></i> Esta información se actualiza todos los martes a medio día.
+      </div>
     </div>
     <div class="status-badge" id="status-box">
       <i class="fa-solid fa-spinner fa-spin"></i> Cargando datos...
@@ -828,43 +858,53 @@
     </div>
   </div>
 
-  <!-- Grid Principal -->
+  <!-- Grid Principal Reestructurado -->
   <div class="dashboard-grid">
-    <div class="left-column">
-      <!-- Tabla 1: Resumen por Tipo de Activo -->
-      <div class="table-container">
-        <div class="table-header">
-          <span id="tabla-1-title">Resumen por Tipo de Activo</span>
+    
+    <!-- FILA 1: Resumen Tipo Activo (Izquierda) + Resumen Motivos No Realizados (Derecha) -->
+    <div class="grid-row-two-col">
+      <div class="grid-col-half">
+        <div class="table-container">
+          <div class="table-header">
+            <span id="tabla-1-title">Resumen por Tipo de Activo</span>
+          </div>
+          <div id="tabla-1-container"></div>
         </div>
-        <div id="tabla-1-container"></div>
       </div>
 
-      <!-- Tabla Resumen de Motivos de No Servicio -->
-      <div class="table-container">
-        <div class="table-header" style="background-color: #fff8e1; color: #b78103;">
-          <span id="tabla-motivos-title"><i class="fa-solid fa-list-check"></i> Resumen de Motivos (No Realizados / No Resueltos)</span>
+      <div class="grid-col-half">
+        <div class="table-container">
+          <div class="table-header" style="background-color: #fff8e1; color: #b78103;">
+            <span id="tabla-motivos-title"><i class="fa-solid fa-list-check"></i> Resumen de Motivos (No Realizados / No Resueltos)</span>
+          </div>
+          <div id="tabla-motivos-container"></div>
         </div>
-        <div id="tabla-motivos-container"></div>
-      </div>
-
-      <!-- Tabla No Realizados / No Resueltos -->
-      <div class="table-container">
-        <div class="table-header" style="background-color: #fff3f3; color: #c62828;">
-          <span id="tabla-no-title"><i class="fa-solid fa-triangle-exclamation"></i> Justificación Visita No Realizada</span>
-        </div>
-        <div class="scrollable-table" id="tabla-no-realizadas-container"></div>
-      </div>
-
-      <!-- Tabla: Detalle de Servicios Realizados (SI) Exclusiva para Ruta Preventiva -->
-      <div class="table-container" id="container-si-realizadas">
-        <div class="table-header" style="background-color: #e8f5e9; color: var(--excel-green-dark);">
-          <span id="tabla-si-title"><i class="fa-solid fa-circle-check"></i> Detalle de Servicios Realizados (SI)</span>
-        </div>
-        <div class="scrollable-table" id="tabla-si-realizadas-container"></div>
       </div>
     </div>
 
-    <div class="right-column">
+    <!-- FILA 2: Detalle Servicios Realizados (Izquierda) + Justificación Visita No Realizada (Derecha) -->
+    <div class="grid-row-two-col">
+      <div class="grid-col-half" id="container-si-realizadas">
+        <div class="table-container">
+          <div class="table-header" style="background-color: #e8f5e9; color: var(--excel-green-dark);">
+            <span id="tabla-si-title"><i class="fa-solid fa-circle-check"></i> Detalle de Servicios Realizados (SI)</span>
+          </div>
+          <div class="scrollable-table" id="tabla-si-realizadas-container"></div>
+        </div>
+      </div>
+
+      <div class="grid-col-half">
+        <div class="table-container">
+          <div class="table-header" style="background-color: #fff3f3; color: #c62828;">
+            <span id="tabla-no-title"><i class="fa-solid fa-triangle-exclamation"></i> Justificación Visita No Realizada</span>
+          </div>
+          <div class="scrollable-table" id="tabla-no-realizadas-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILA 3 (ABAJO DEL TODO): Desglose por Categoría y Técnico a Ancho Completo -->
+    <div class="grid-row-full">
       <div class="table-container">
         <div class="table-header">
           <span>Desglose por Categoría y Técnico</span>
@@ -872,6 +912,7 @@
         <div id="tabla-2-container"></div>
       </div>
     </div>
+
   </div>
 
   <script>
@@ -938,7 +979,6 @@
         const res = String(d['Pudo Resolver Problema'] || d['Pudo resolver problema'] || d['Resuelto'] || '').toUpperCase().trim();
         return res === "SI" || res === "1" || res === "RESUELTO";
       } else {
-        // RUTA PREVENTIVA: Se valida siempre por la columna "Realizada" (Fuente Oficial de Verdad)
         const realizada = String(d['Realizada'] || d['Realizada 2'] || d['Cumplimiento'] || '').toUpperCase().trim();
         return realizada === "SI" || realizada === "1" || realizada === "EJECUTADA" || realizada === "REALIZADA";
       }
