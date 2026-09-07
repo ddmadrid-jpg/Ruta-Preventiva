@@ -1285,7 +1285,7 @@
       return null;
     }
 
-    /* Obtiene datos filtrados excluyendo el filtro de 'mes' para poder graficar la Evolución Mensual reactiva */
+    /* OMITIR EL FILTRO DE MES PARA EL GRÁFICO DE EVOLUCIÓN MENSUAL */
     function getFilteredDataWithoutMonth() {
       const fUsuario = filtersState.usuario.selected;
       const fLocalId = filtersState.localId.selected;
@@ -1436,12 +1436,12 @@
       });
     }
 
-    /* Gráfico de Evolución Mensual REACTIVO A FILTROS (Cliente, Técnico, Local, Fechas) */
+    /* Gráfico de Evolución Mensual IGNORA FILTRO DE MES PERO MANTIENE CLIENTE, TÉCNICO, LOCAL, DATES */
     function renderTrendChart() {
       const monthlyStats = {};
-      const baseFilteredData = getFilteredDataWithoutMonth(); // Usa la data filtrada excepto por mes
+      const dataWithoutMonth = getFilteredDataWithoutMonth(); // Usa la base con todos los filtros SALVO el del mes
 
-      baseFilteredData.forEach(d => {
+      dataWithoutMonth.forEach(d => {
         const mes = d['Mes'] || d['mes'];
         if (!mes) return;
 
@@ -1455,13 +1455,7 @@
         }
       });
 
-      // Si el usuario seleccionó meses específicos en el filtro de Mes, solo mostramos esos meses
-      let selectedMonths = filtersState.mes.selected;
       let labels = Object.keys(monthlyStats);
-
-      if (selectedMonths.length > 0) {
-        labels = labels.filter(m => selectedMonths.includes(m));
-      }
 
       if (labels.length > 13) {
         labels = labels.slice(-13);
