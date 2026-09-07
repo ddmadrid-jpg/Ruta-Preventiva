@@ -753,7 +753,7 @@
     </div>
   </div>
 
-  <!-- Filtros Estilo Google Sheets Nativos -->
+  <!-- Panel de Filtros -->
   <div class="filter-card">
     <div class="filter-group" data-filter="mes">
       <label><i class="fa-regular fa-calendar"></i> Mes</label>
@@ -1285,8 +1285,8 @@
       return null;
     }
 
-    function getFilteredData() {
-      const fMes = filtersState.mes.selected;
+    /* Obtiene datos filtrados excluyendo el filtro de 'mes' para poder graficar la Evolución Mensual reactiva */
+    function getFilteredDataWithoutMonth() {
       const fUsuario = filtersState.usuario.selected;
       const fLocalId = filtersState.localId.selected;
       const fCliente = filtersState.cliente.selected;
@@ -1297,7 +1297,6 @@
       const fFin = fFinStr ? new Date(fFinStr) : null;
 
       return rawData.filter(d => {
-        const dMes = String(d['Mes'] || d['mes'] || '').trim();
         const dUsuario = String(d['Usuario'] || d['usuario'] || '').trim();
         const dLocal = String(d['Local'] || '').trim();
         const dIdCCU = String(d['ID CCU'] || d['ID'] || d['Id CCU'] || d['ID Cliente (Escaneado)'] || d['ID Cliente (Manual)'] || '').trim();
@@ -1306,7 +1305,6 @@
         const rawFecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || d['Fecha'];
         const dFecha = parseDate(rawFecha);
 
-        const matchMes = fMes.length === 0 || fMes.includes(dMes);
         const matchUsuario = fUsuario.length === 0 || fUsuario.includes(dUsuario);
         const matchLocalId = fLocalId.length === 0 || fLocalId.includes(dLocal) || fLocalId.includes(dIdCCU);
         const matchCliente = fCliente.length === 0 || fCliente.includes(dCliente);
@@ -1317,7 +1315,17 @@
           if (fFin && dFecha > fFin) matchFecha = false;
         }
 
-        return matchMes && matchUsuario && matchLocalId && matchCliente && matchFecha;
+        return matchUsuario && matchLocalId && matchCliente && matchFecha;
+      });
+    }
+
+    function getFilteredData() {
+      const fMes = filtersState.mes.selected;
+      const dataWithoutMonth = getFilteredDataWithoutMonth();
+
+      return dataWithoutMonth.filter(d => {
+        const dMes = String(d['Mes'] || d['mes'] || '').trim();
+        return fMes.length === 0 || fMes.includes(dMes);
       });
     }
 
@@ -1428,11 +1436,12 @@
       });
     }
 
-    /* Gráfico de Evolución Mensual Adaptativo */
+    /* Gráfico de Evolución Mensual REACTIVO A FILTROS (Cliente, Técnico, Local, Fechas) */
     function renderTrendChart() {
       const monthlyStats = {};
+      const baseFilteredData = getFilteredDataWithoutMonth(); // Usa la data filtrada excepto por mes
 
-      rawData.forEach(d => {
+      baseFilteredData.forEach(d => {
         const mes = d['Mes'] || d['mes'];
         if (!mes) return;
 
@@ -1446,7 +1455,14 @@
         }
       });
 
+      // Si el usuario seleccionó meses específicos en el filtro de Mes, solo mostramos esos meses
+      let selectedMonths = filtersState.mes.selected;
       let labels = Object.keys(monthlyStats);
+
+      if (selectedMonths.length > 0) {
+        labels = labels.filter(m => selectedMonths.includes(m));
+      }
+
       if (labels.length > 13) {
         labels = labels.slice(-13);
       }
@@ -1466,7 +1482,7 @@
               {
                 label: '% Efectividad SI',
                 data: labels.map(m => {
-                  const tot = monthlyStats[m].SI + monthlyStats[m].NO;
+                  const tot = (monthlyStats[m] ? monthlyStats[m].SI : 0) + (monthlyStats[m] ? monthlyStats[m].NO : 0);
                   return tot > 0 ? parseFloat(((monthlyStats[m].SI / tot) * 100).toFixed(1)) : 0;
                 }),
                 backgroundColor: '#006100',
@@ -1502,8 +1518,8 @@
                 callbacks: {
                   label: function(ctx) {
                     const m = ctx.label;
-                    const cantSI = monthlyStats[m].SI;
-                    const tot = monthlyStats[m].SI + monthlyStats[m].NO;
+                    const cantSI = monthlyStats[m] ? monthlyStats[m].SI : 0;
+                    const tot = (monthlyStats[m] ? monthlyStats[m].SI : 0) + (monthlyStats[m] ? monthlyStats[m].NO : 0);
                     return `${m}: ${cantSI}/${tot} resueltos (${ctx.raw}%)`;
                   }
                 }
@@ -1522,7 +1538,7 @@
               const meta = chart.getDatasetMeta(0);
               meta.data.forEach((bar, index) => {
                 const mes = labels[index];
-                const totalM = monthlyStats[mes].SI + monthlyStats[mes].NO;
+                const totalM = (monthlyStats[mes] ? monthlyStats[mes].SI : 0) + (monthlyStats[mes] ? monthlyStats[mes].NO : 0);
                 if (totalM > 0) {
                   ctxChart.fillText(`(${totalM})`, bar.x, bar.y + 14);
                 }
@@ -1540,7 +1556,7 @@
               {
                 label: '% Cumplimiento SI',
                 data: labels.map(m => {
-                  const tot = monthlyStats[m].SI + monthlyStats[m].NO;
+                  const tot = (monthlyStats[m] ? monthlyStats[m].SI : 0) + (monthlyStats[m] ? monthlyStats[m].NO : 0);
                   return tot > 0 ? parseFloat(((monthlyStats[m].SI / tot) * 100).toFixed(1)) : 0;
                 }),
                 backgroundColor: '#006100',
@@ -1574,8 +1590,8 @@
                 callbacks: {
                   label: function(ctx) {
                     const m = ctx.label;
-                    const cantSI = monthlyStats[m].SI;
-                    const tot = monthlyStats[m].SI + monthlyStats[m].NO;
+                    const cantSI = monthlyStats[m] ? monthlyStats[m].SI : 0;
+                    const tot = (monthlyStats[m] ? monthlyStats[m].SI : 0) + (monthlyStats[m] ? monthlyStats[m].NO : 0);
                     return `${m}: ${cantSI}/${tot} (${ctx.raw}%)`;
                   }
                 }
