@@ -220,10 +220,6 @@
       margin-bottom: 24px;
     }
 
-    .kpi-container.cobertura-kpis {
-      grid-template-columns: 1fr 1fr 1fr;
-    }
-
     .kpi-card {
       background: var(--card-bg);
       padding: 16px 18px;
@@ -487,7 +483,7 @@
       color: #fff;
     }
 
-    /* Layout principal reestructurado */
+    /* Layout principal */
     .dashboard-grid {
       display: flex;
       flex-direction: column;
@@ -581,10 +577,6 @@
       color: #666;
       display: block;
     }
-
-    .status-pill { padding: 3px 6px; border-radius: 10px; font-size: 10px; font-weight: bold; display: inline-block; text-align: center; }
-    .pill-ok { background: #e8f5e9; color: #2e7d32; }
-    .pill-no { background: #ffebee; color: #c62828; }
 
     .photos-flex {
       display: flex;
@@ -698,7 +690,6 @@
       <div class="header-title">
         <h1 id="main-title"><i class="fa-solid fa-chart-line" style="font-size: 20px; color: var(--primary-green);"></i> Dashboard Ruta Preventiva</h1>
       </div>
-      <!-- Texto Informativo en Gris Estilo Submenú -->
       <div class="update-subtext">
         <i class="fa-regular fa-clock"></i> Esta información se actualiza todos los martes a medio día.
       </div>
@@ -716,13 +707,13 @@
     <button class="tab-btn" data-sheet="urgencias">
       <i class="fa-solid fa-truck-medical"></i> Urgencias
     </button>
-    <button class="tab-btn" data-sheet="cobertura">
-      <i class="fa-solid fa-shield-halved"></i> Cobertura de Mantención
+    <button class="tab-btn" data-sheet="ejecuciones">
+      <i class="fa-solid fa-gears"></i> Ejecuciones
     </button>
   </div>
 
   <!-- Tarjetas KPI (4 Columnas) -->
-  <div class="kpi-container" id="kpi-main-container">
+  <div class="kpi-container">
     <div class="kpi-card chart-card">
       <div>
         <div class="kpi-title" id="kpi-label-1">Total Servicios</div>
@@ -749,7 +740,7 @@
       <div class="kpi-subtext" id="kpi-no-count" style="color: #888;">0 Pendientes</div>
     </div>
 
-    <div class="kpi-card" id="trend-kpi-card" style="border-left-color: var(--pepsi-blue);">
+    <div class="kpi-card" style="border-left-color: var(--pepsi-blue);">
       <div class="kpi-title" id="trend-card-title"><i class="fa-solid fa-chart-column"></i> Evolución Mensual (% SI)</div>
       <div class="mini-trend-box">
         <canvas id="trendChart"></canvas>
@@ -759,7 +750,7 @@
 
   <!-- Panel de Filtros -->
   <div class="filter-card">
-    <div class="filter-group filter-date-group" data-filter="mes">
+    <div class="filter-group" data-filter="mes">
       <label><i class="fa-regular fa-calendar"></i> Mes</label>
       <div class="gs-filter-box">
         <span class="gs-filter-text">Todos (filtrar...)</span>
@@ -782,37 +773,14 @@
       </div>
     </div>
 
-    <div class="filter-group filter-date-group">
+    <div class="filter-group">
       <label for="filter-fecha-inicio"><i class="fa-regular fa-calendar-days"></i> Fecha Inicio</label>
       <input type="text" id="filter-fecha-inicio" class="date-input" placeholder="Seleccionar inicio...">
     </div>
 
-    <div class="filter-group filter-date-group">
+    <div class="filter-group">
       <label for="filter-fecha-fin"><i class="fa-regular fa-calendar-check"></i> Fecha Término</label>
       <input type="text" id="filter-fecha-fin" class="date-input" placeholder="Seleccionar término...">
-    </div>
-
-    <div class="filter-group" data-filter="estado" id="filter-group-estado" style="display: none;">
-      <label><i class="fa-solid fa-toggle-on"></i> Estado (Vigencia)</label>
-      <div class="gs-filter-box">
-        <span class="gs-filter-text">Todos (filtrar...)</span>
-        <i class="fa-solid fa-caret-down gs-filter-icon"></i>
-      </div>
-      <div class="gs-dropdown">
-        <div class="gs-bulk-actions">
-          <span class="gs-link-btn btn-select-filtered">Seleccionar filtrados</span>
-          <span class="gs-link-btn btn-clear-all">Borrar</span>
-        </div>
-        <div class="gs-search-input-wrap">
-          <input type="text" placeholder="Buscar..." class="gs-search-input">
-          <i class="fa-solid fa-magnifying-glass"></i>
-        </div>
-        <div class="gs-options-list"></div>
-        <div class="gs-actions-footer">
-          <button class="gs-btn gs-btn-cancel">Cancelar</button>
-          <button class="gs-btn gs-btn-accept">Aceptar</button>
-        </div>
-      </div>
     </div>
 
     <div class="filter-group" data-filter="usuario">
@@ -930,17 +898,8 @@
       </div>
     </div>
 
-    <!-- FILA 3 (ABAJO DEL TODO): Desglose por Categoría y Técnico a Ancho Completo / Tabla Cobertura -->
-    <div class="grid-row-full" id="row-cobertura-bottom" style="display: none;">
-      <div class="table-container">
-        <div class="table-header" style="background-color: #0d47a1; color: #ffffff;">
-          <span><i class="fa-solid fa-building"></i> Cobertura y Vigencia por Oficina Comercial</span>
-        </div>
-        <div id="tabla-cobertura-container"></div>
-      </div>
-    </div>
-
-    <div class="grid-row-full" id="row-tecnicos-bottom">
+    <!-- FILA 3 (ABAJO DEL TODO): Desglose por Categoría y Técnico a Ancho Completo -->
+    <div class="grid-row-full">
       <div class="table-container">
         <div class="table-header">
           <span>Desglose por Categoría y Técnico</span>
@@ -956,11 +915,8 @@
     const SHEETS_URLS = {
       preventiva: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHJUM26MwbPurx5FdJGQc-I-vlfwyEZYbPGeYE0F5HxEWpbMyhVeJpJKK7XjCD6No8RZCfeHgWaxZZ/pub?output=csv",
       urgencias: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTNzXfjkM4mtZrHyPjzSVqjYOTG0tVFReUG3FPpR-nkyCud1hoR8rRPpqPToiz82Vmp0A5ubJqz3zx/pub?output=csv",
-      cobertura: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTF-Kk3diC7SHMgZKKJVytUQ96yjgAaDD_zWXxvM9jk7eTzfwutocJiB3Lx7ARxzp2EYlVlSTdZXM5J/pub?output=csv",
       ejecuciones: ""
     };
-
-    const OFICINAS_PERMITIDAS = ["CADENA", "IMAGEN", "LA FLORIDA", "MAIPU", "MODELO", "PIRAMIDE", "VESPUCIO"];
 
     let currentSheetKey = "preventiva";
     let rawData = [];
@@ -975,8 +931,7 @@
       mes: { selected: [], searchText: "" },
       usuario: { selected: [], searchText: "" },
       localId: { selected: [], searchText: "" },
-      cliente: { selected: [], searchText: "" },
-      estado: { selected: [], searchText: "" }
+      cliente: { selected: [], searchText: "" }
     };
 
     function showLoader() {
@@ -995,8 +950,7 @@
         mes: { selected: [], searchText: "" },
         usuario: { selected: [], searchText: "" },
         localId: { selected: [], searchText: "" },
-        cliente: { selected: [], searchText: "" },
-        estado: { selected: [], searchText: "" }
+        cliente: { selected: [], searchText: "" }
       };
       $('.filter-group').find('.gs-search-input').val('');
       $('#filter-fecha-inicio').val('');
@@ -1008,20 +962,16 @@
     }
 
     function getServiciosQty(d) {
-      if (currentSheetKey === "urgencias" || currentSheetKey === "cobertura") return 1;
+      if (currentSheetKey === "urgencias") return 1;
       const val = d['Servicios'] || d['servicios'] || d['SERVICIOS'] || d['Cant'] || d['Cantidad'];
       const num = parseInt(val, 10);
       return isNaN(num) ? 1 : num;
     }
 
-    // VALIDACIÓN OFICIAL DE REALIZADA EN CADA PESTAÑA
     function isServicioRealizado(d) {
       if (currentSheetKey === "urgencias") {
         const res = String(d['Pudo Resolver Problema'] || d['Pudo resolver problema'] || d['Resuelto'] || '').toUpperCase().trim();
         return res === "SI" || res === "1" || res === "RESUELTO";
-      } else if (currentSheetKey === "cobertura") {
-        const res = String(d['ESTADO (VIGENTE - NO VIGENTE)'] || d['ESTADO'] || d['Vigencia'] || d['Vigente'] || '').toUpperCase().trim();
-        return res === "VIGENTE" || res === "SI" || res === "1";
       } else {
         const realizada = String(d['Realizada'] || d['Realizada 2'] || d['Cumplimiento'] || '').toUpperCase().trim();
         return realizada === "SI" || realizada === "1" || realizada === "EJECUTADA" || realizada === "REALIZADA";
@@ -1029,10 +979,11 @@
     }
 
     function getTipoActivo(d) {
-      const codLocal = String(d['ID X LOCAL X TIPO MAQUINA'] || d['Local'] || d['local'] || d['Tipo de Activo'] || '').toUpperCase().trim();
-      if (codLocal.startsWith('LCSCH') || codLocal.includes('SCHOP')) return 'Schop';
-      if (codLocal.startsWith('LCPM') || codLocal.includes('POST')) return 'Post Mix';
-      return 'Post Mix';
+      const val = d['Tipo de Activo'] || d['Tipo de Activo '] || d['Activos'] || d['Categoria'] || d['Categoría'] || d['Tipo Urgencia'] || '';
+      const str = String(val).toUpperCase();
+      if (str.includes('SCHOP')) return 'Schop';
+      if (str.includes('POST')) return 'Post Mix';
+      return val || 'Post Mix';
     }
 
     function getCategoriaTecnico(d) {
@@ -1069,18 +1020,12 @@
 
     // OBTENCIÓN EXCLUSIVA DEL MOTIVO SEGÚN PESTAÑA ACTIVA
     function getMotivoNoServicio(d) {
-      if (currentSheetKey === "cobertura") {
-        const rawAC = (d['Motivo No Vigente'] || d['Motivo No Servicio'] || d['Motivo'] || '').trim();
-        if (!rawAC || rawAC.toUpperCase() === 'VIGENTE' || rawAC.toUpperCase() === '-' || rawAC.toUpperCase() === 'SIN INFORMACIÓN') {
-          return 'Sin Información';
-        }
-        return rawAC;
-      }
-
       if (currentSheetKey === "urgencias") {
+        // En Urgencias se lee directamente la columna "Resuelto" expuesta en la imagen
         const rawResuelto = String(d['Resuelto'] || d['Comentario No Resuelto'] || '').trim();
         return rawResuelto !== '' && rawResuelto !== '0' ? rawResuelto : 'Sin Información';
       } else {
+        // En Ruta Preventiva se mantiene la estandarización fija solicitada
         const raw = (d['Motivo No Servicio'] || d['motivo_no_servicio'] || d['Motivo'] || '').trim();
         const strUpper = raw.toUpperCase();
 
@@ -1126,31 +1071,7 @@
           $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen de Motivos No Resueltos');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Resueltas)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle de Urgencias No Resueltas');
-          
-          $('.filter-date-group').show();
-          $('#filter-group-estado').hide();
-          $('#trend-kpi-card').show();
-          $('#kpi-main-container').removeClass('cobertura-kpis');
-          $('#row-cobertura-bottom').hide();
-          $('#row-tecnicos-bottom').show();
           $('#container-si-realizadas').hide();
-
-        } else if (currentSheetKey === "cobertura") {
-          $('#main-title').html('<i class="fa-solid fa-shield-halved" style="font-size: 20px; color: var(--pepsi-blue);"></i> Dashboard Cobertura de Mantención');
-          $('#kpi-label-1').text('Total Clientes');
-          $('#kpi-label-2').text('Porcentaje Vigentes');
-          $('#kpi-label-3').text('Clientes No Vigentes');
-          $('#tabla-1-title').text('Resumen por Tipo de Activo');
-          $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen Causa de No Vigencia');
-          
-          $('.filter-date-group').hide();
-          $('#filter-group-estado').show();
-          $('#trend-kpi-card').hide();
-          $('#kpi-main-container').addClass('cobertura-kpis');
-          $('#row-cobertura-bottom').show();
-          $('#row-tecnicos-bottom').hide();
-          $('#container-si-realizadas').hide();
-
         } else {
           $('#main-title').html('<i class="fa-solid fa-chart-line" style="font-size: 20px; color: var(--primary-green);"></i> Dashboard Ruta Preventiva');
           $('#kpi-label-1').text('Total Servicios');
@@ -1163,13 +1084,6 @@
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Justificación Visita No Realizada');
           $('#container-si-realizadas').show();
           $('#tabla-si-title').html('<i class="fa-solid fa-circle-check"></i> Detalle de Servicios Realizados (SI)');
-
-          $('.filter-date-group').show();
-          $('#filter-group-estado').hide();
-          $('#trend-kpi-card').show();
-          $('#kpi-main-container').removeClass('cobertura-kpis');
-          $('#row-cobertura-bottom').hide();
-          $('#row-tecnicos-bottom').show();
         }
 
         resetFiltersState();
@@ -1290,11 +1204,7 @@
           rawData = results.data;
           document.getElementById('status-box').innerHTML = `<i class="fa-solid fa-circle-check"></i> Base Actualizada (${rawData.length} registros)`;
           populateFilterLists();
-          
-          if (currentSheetKey !== "cobertura") {
-            setMesActualDefault();
-          }
-
+          setMesActualDefault();
           renderDashboard();
           hideLoader();
         },
@@ -1323,7 +1233,7 @@
       const getUniqueLocalAndCCU = () => {
         let values = [];
         rawData.forEach(d => {
-          const loc = d['Local'] || d['local'] || d['ID X LOCAL X TIPO MAQUINA'];
+          const loc = d['Local'] || d['local'];
           const ccu = d['ID CCU'] || d['ID'] || d['Id CCU'] || d['id_ccu'] || d['ID Cliente (Escaneado)'] || d['ID Cliente (Manual)'];
           if (loc) values.push(String(loc).trim());
           if (ccu) values.push(String(ccu).trim());
@@ -1350,7 +1260,6 @@
       fillFilterUI('usuario', getUnique(['Usuario', 'STCYG', 'usuario']));
       fillFilterUI('localId', getUniqueLocalAndCCU());
       fillFilterUI('cliente', getUnique(['Nombre Fantasía', 'Nombre Fantasía ', 'Nombre de Fantasia', 'Nombre Fantasia', 'Nombre Receptor', 'Cliente', 'cliente', 'Oficina']));
-      fillFilterUI('estado', getUnique(['ESTADO (VIGENTE - NO VIGENTE)', 'ESTADO', 'Vigencia', 'Vigente']));
     }
 
     function setMesActualDefault() {
@@ -1383,7 +1292,6 @@
       const fUsuario = filtersState.usuario.selected;
       const fLocalId = filtersState.localId.selected;
       const fCliente = filtersState.cliente.selected;
-      const fEstado = filtersState.estado.selected;
 
       const fInicioStr = $('#filter-fecha-inicio').val();
       const fFinStr = $('#filter-fecha-fin').val();
@@ -1392,10 +1300,9 @@
 
       return rawData.filter(d => {
         const dUsuario = String(d['Usuario'] || d['usuario'] || '').trim();
-        const dLocal = String(d['Local'] || d['ID X LOCAL X TIPO MAQUINA'] || '').trim();
+        const dLocal = String(d['Local'] || '').trim();
         const dIdCCU = String(d['ID CCU'] || d['ID'] || d['Id CCU'] || d['ID Cliente (Escaneado)'] || d['ID Cliente (Manual)'] || '').trim();
         const dCliente = String(getNombreCliente(d)).trim();
-        const dEstado = String(d['ESTADO (VIGENTE - NO VIGENTE)'] || d['ESTADO'] || d['Vigencia'] || '').trim();
         
         const rawFecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || d['Fecha'];
         const dFecha = parseDate(rawFecha);
@@ -1403,25 +1310,20 @@
         const matchUsuario = fUsuario.length === 0 || fUsuario.includes(dUsuario);
         const matchLocalId = fLocalId.length === 0 || fLocalId.includes(dLocal) || fLocalId.includes(dIdCCU);
         const matchCliente = fCliente.length === 0 || fCliente.includes(dCliente);
-        const matchEstado = fEstado.length === 0 || fEstado.includes(dEstado);
 
         let matchFecha = true;
-        if (dFecha && currentSheetKey !== "cobertura") {
+        if (dFecha) {
           if (fInicio && dFecha < fInicio) matchFecha = false;
           if (fFin && dFecha > fFin) matchFecha = false;
         }
 
-        return matchUsuario && matchLocalId && matchCliente && matchEstado && matchFecha;
+        return matchUsuario && matchLocalId && matchCliente && matchFecha;
       });
     }
 
     function getFilteredData() {
       const fMes = filtersState.mes.selected;
       const dataWithoutMonth = getFilteredDataWithoutMonth();
-
-      if (currentSheetKey === "cobertura") {
-        return dataWithoutMonth;
-      }
 
       return dataWithoutMonth.filter(d => {
         const dMes = String(d['Mes'] || d['mes'] || '').trim();
@@ -1454,19 +1356,7 @@
         }
       });
 
-      let grandTotal = totalSI + totalNO;
-
-      if (currentSheetKey === "cobertura") {
-        let cobCountFilter = 0;
-        data.forEach(d => {
-          let ofic = String(d['Oficina Comercial'] || d['Oficina'] || d['OFICINA'] || '').toUpperCase().trim();
-          if (OFICINAS_PERMITIDAS.some(of => ofic.includes(of))) {
-            cobCountFilter++;
-          }
-        });
-        grandTotal = cobCountFilter;
-      }
-
+      const grandTotal = totalSI + totalNO;
       const pctSI = grandTotal > 0 ? ((totalSI / grandTotal) * 100).toFixed(1) : '0.0';
       const pctNO = grandTotal > 0 ? ((totalNO / grandTotal) * 100).toFixed(1) : '0.0';
 
@@ -1476,9 +1366,6 @@
       if (currentSheetKey === "urgencias") {
         document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Casos Resueltos`;
         document.getElementById('kpi-no-count').innerText = `${totalNO.toLocaleString()} Casos No Resueltos`;
-      } else if (currentSheetKey === "cobertura") {
-        document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Clientes Vigentes`;
-        document.getElementById('kpi-no-count').innerText = `${totalNO.toLocaleString()} Clientes No Vigentes`;
       } else {
         document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Servicios Realizados`;
         document.getElementById('kpi-no-count').innerText = `${totalNO.toLocaleString()} Servicios Pendientes`;
@@ -1487,11 +1374,7 @@
       document.getElementById('kpi-pendientes').innerText = pctNO + '%';
 
       renderActivosChart(countSchop, countPostMix);
-
-      if (currentSheetKey !== "cobertura") {
-        renderTrendChart();
-      }
-
+      renderTrendChart();
       renderTabla1(data);
       renderTablaMotivos(data, totalNO, grandTotal);
       renderTabla2(data);
@@ -1499,10 +1382,6 @@
       
       if (currentSheetKey === "preventiva") {
         renderTablaSiRealizadas(data);
-      }
-
-      if (currentSheetKey === "cobertura") {
-        renderTablaCoberturaOficinas(data);
       }
     }
 
@@ -1795,9 +1674,11 @@
 
       let ordenFilas = [];
 
-      if (currentSheetKey === "cobertura" || currentSheetKey === "urgencias") {
+      if (currentSheetKey === "urgencias") {
+        // En Urgencias se ordenan dinámicamente según las causas encontradas en la hoja
         ordenFilas = Object.keys(motivosStats).sort((a, b) => motivosStats[b] - motivosStats[a]);
       } else {
+        // En Ruta Preventiva se mantiene el orden estricto solicitado
         ordenFilas = [
           'Local Cerrado',
           'Cliente no permite',
@@ -1807,14 +1688,12 @@
         ];
       }
 
-      let thTitulo = currentSheetKey === "cobertura" ? "Causa / Motivo No Vigente" : "Motivo No Servicio / Causa";
-
       let html = `
         <table>
           <thead>
             <tr>
-              <th class="left">${thTitulo}</th>
-              <th>Cantidad</th>
+              <th class="left">Motivo No Servicio / Causa</th>
+              <th>Cantidad Servicios</th>
               <th>% del Total NO</th>
               <th>% del Total General</th>
             </tr>
@@ -1824,7 +1703,7 @@
       if (ordenFilas.length === 0) {
         html += `
           <tr>
-            <td colspan="4" class="no-data">🎉 Sin registros no vigentes / pendientes.</td>
+            <td colspan="4" class="no-data">🎉 Sin servicios no realizados para los filtros seleccionados.</td>
           </tr>`;
       } else {
         ordenFilas.forEach(motivo => {
@@ -1846,7 +1725,7 @@
 
       html += `
         <tr class="total-general">
-          <td class="left">Total No Atendidos / No Vigentes</td>
+          <td class="left">Total No Atendidos / No Resueltos</td>
           <td>${totalNO}</td>
           <td>100%</td>
           <td>${totalPctNO_General}</td>
@@ -1856,90 +1735,8 @@
       document.getElementById('tabla-motivos-container').innerHTML = html;
     }
 
-    /* RENDER DE COBERTURA Y VIGENCIA POR OFICINA COMERCIAL */
-    function renderTablaCoberturaOficinas(data) {
-      const oficinasMap = {};
-
-      OFICINAS_PERMITIDAS.forEach(of => {
-        oficinasMap[of] = { ok: 0, noOk: 0 };
-      });
-
-      let grandOK = 0;
-      let grandNoOK = 0;
-
-      data.forEach(d => {
-        let oficinaRaw = String(d['Oficina Comercial'] || d['Oficina'] || d['OFICINA'] || '').toUpperCase().trim();
-        const oficinaEncontrada = OFICINAS_PERMITIDAS.find(of => oficinaRaw.includes(of));
-
-        if (oficinaEncontrada) {
-          const realizado = isServicioRealizado(d);
-          if (realizado) {
-            oficinasMap[oficinaEncontrada].ok++;
-            grandOK++;
-          } else {
-            oficinasMap[oficinaEncontrada].noOk++;
-            grandNoOK++;
-          }
-        }
-      });
-
-      const totalGeneral = grandOK + grandNoOK;
-
-      let htmlCob = `
-        <table>
-          <thead>
-            <tr>
-              <th class="left">Oficina Comercial</th>
-              <th>Clientes Vigentes</th>
-              <th>Clientes No Vigentes</th>
-              <th>Total Clientes</th>
-              <th>% Vigencia sobre Oficina</th>
-              <th>% sobre el Total General</th>
-            </tr>
-          </thead>
-          <tbody>`;
-
-      OFICINAS_PERMITIDAS.forEach(oficina => {
-        const v = oficinasMap[oficina].ok;
-        const nv = oficinasMap[oficina].noOk;
-        const totOficina = v + nv;
-
-        const pctSobreOficina = totOficina > 0 ? ((v / totOficina) * 100).toFixed(1) + '%' : '0.0%';
-        const pctSobreTotal = totalGeneral > 0 ? ((totOficina / totalGeneral) * 100).toFixed(1) + '%' : '0.0%';
-
-        const ofNombrePretty = oficina.charAt(0) + oficina.slice(1).toLowerCase();
-
-        htmlCob += `
-          <tr>
-            <td class="left"><strong>${ofNombrePretty}</strong></td>
-            <td><span class="status-pill pill-ok">${v}</span></td>
-            <td><span class="status-pill pill-no">${nv}</span></td>
-            <td><strong>${totOficina}</strong></td>
-            <td><strong style="color:var(--excel-green-dark);">${pctSobreOficina}</strong></td>
-            <td><span class="qty-badge" style="font-weight:bold;">${pctSobreTotal}</span></td>
-          </tr>`;
-      });
-
-      const grandPctVigencia = totalGeneral > 0 ? ((grandOK / totalGeneral) * 100).toFixed(1) + '%' : '0.0%';
-
-      htmlCob += `
-        <tr class="total-general">
-          <td class="left">Total General</td>
-          <td>${grandOK}</td>
-          <td>${grandNoOK}</td>
-          <td>${totalGeneral}</td>
-          <td>${grandPctVigencia}</td>
-          <td>100%</td>
-        </tr>
-        </tbody></table>`;
-
-      document.getElementById('tabla-cobertura-container').innerHTML = htmlCob;
-    }
-
     /* REGLA DE RUTA PREVENTIVA: ORDEN POR CÓDIGO Y TRATAMIENTO DE STCYG34 EN "HÍBRIDO" */
     function renderTabla2(data) {
-      if (currentSheetKey === "cobertura") return;
-
       const t2Stats = {};
       data.forEach(d => {
         const qty = getServiciosQty(d);
@@ -1973,6 +1770,7 @@
 
       let grandNO = 0, grandSI = 0;
 
+      // En Ruta Preventiva se extrae STCYG34 para moverlo al final a la nueva categoría "Híbrido"
       let stcyg34Data = null;
       if (currentSheetKey === "preventiva") {
         stcyg34Data = { Schop: null, PostMix: null };
@@ -1986,6 +1784,7 @@
         }
       }
 
+      // Orden para asegurarnos que Post Mix aparezca ARRIBA de Schop si estamos en Ruta Preventiva
       let categoriasOrdenadas = Object.keys(t2Stats);
       if (currentSheetKey === "preventiva") {
         categoriasOrdenadas.sort((a, b) => {
@@ -1997,6 +1796,8 @@
 
       categoriasOrdenadas.forEach(cat => {
         let catSI = 0, catNO = 0;
+        
+        // Orden numérico de usuarios (STCYG01, STCYG02, etc.)
         const usuariosOrdenados = Object.keys(t2Stats[cat]).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
         usuariosOrdenados.forEach(usr => {
@@ -2040,6 +1841,7 @@
           </tr>`;
       });
 
+      // MÓDULO HÍBRIDO (Exclusivo para STCYG34 si está presente en el filtro activo)
       if (currentSheetKey === "preventiva" && stcyg34Data && (stcyg34Data.Schop || stcyg34Data.PostMix)) {
         let hibridoSI = 0, hibridoNO = 0;
 
