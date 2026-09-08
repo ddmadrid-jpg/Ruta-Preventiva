@@ -75,7 +75,6 @@
       filter: drop-shadow(0px 8px 16px rgba(0,0,0,0.18));
     }
 
-    /* Animación del líquido sirviéndose */
     .beer-liquid-path {
       animation: fillBeerAnimation 2s infinite ease-in-out;
       transform-origin: bottom;
@@ -87,7 +86,6 @@
       100% { transform: scaleY(0.95); }
     }
 
-    /* Animación de la espuma rebalsando suavemente */
     .beer-foam-group {
       animation: foamRiseAnimation 2s infinite ease-in-out;
     }
@@ -99,7 +97,6 @@
       100% { transform: translateY(0px); opacity: 1; }
     }
 
-    /* Animación de las Burbujas Flotantes */
     .bubble {
       animation: bubbleFloat 1.8s infinite linear;
       fill: #ffffff;
@@ -156,7 +153,6 @@
       letter-spacing: -0.3px;
     }
 
-    /* Subtexto Informativo Gris */
     .update-subtext {
       font-size: 12px;
       color: #6c757d;
@@ -487,7 +483,7 @@
       color: #fff;
     }
 
-    /* Layout principal reestructurado */
+    /* Layout principal */
     .dashboard-grid {
       display: flex;
       flex-direction: column;
@@ -694,7 +690,6 @@
       <div class="header-title">
         <h1 id="main-title"><i class="fa-solid fa-chart-line" style="font-size: 20px; color: var(--primary-green);"></i> Dashboard Ruta Preventiva</h1>
       </div>
-      <!-- Texto Informativo en Gris Estilo Submenú -->
       <div class="update-subtext">
         <i class="fa-regular fa-clock"></i> Esta información se actualiza todos los martes a medio día.
       </div>
@@ -973,7 +968,6 @@
       return isNaN(num) ? 1 : num;
     }
 
-    // VALIDACIÓN OFICIAL DE REALIZADA EN RUTA PREVENTIVA
     function isServicioRealizado(d) {
       if (currentSheetKey === "urgencias") {
         const res = String(d['Pudo Resolver Problema'] || d['Pudo resolver problema'] || d['Resuelto'] || '').toUpperCase().trim();
@@ -1024,20 +1018,28 @@
       return d['Foto Columnas o Post Mix'] || d['Foto Equipo'] || d['Foto Motivo'] || d['Foto Salida FNE'] || '';
     }
 
+    // OBTENCIÓN EXCLUSIVA DEL MOTIVO SEGÚN PESTAÑA ACTIVA
     function getMotivoNoServicio(d) {
-      const raw = (d['Motivo No Servicio'] || d['motivo_no_servicio'] || d['Resuelto'] || d['Motivo'] || '').trim();
-      const strUpper = raw.toUpperCase();
+      if (currentSheetKey === "urgencias") {
+        // En Urgencias se lee directamente la columna "Resuelto" expuesta en la imagen
+        const rawResuelto = String(d['Resuelto'] || d['Comentario No Resuelto'] || '').trim();
+        return rawResuelto !== '' && rawResuelto !== '0' ? rawResuelto : 'Sin Información';
+      } else {
+        // En Ruta Preventiva se mantiene la estandarización fija solicitada
+        const raw = (d['Motivo No Servicio'] || d['motivo_no_servicio'] || d['Motivo'] || '').trim();
+        const strUpper = raw.toUpperCase();
 
-      if (!raw || strUpper === 'SIN ESPECIFICAR' || strUpper === 'SIN INFORMACIÓN' || strUpper === 'SIN INFORMACION' || strUpper === '-') {
-        return 'Sin Información';
+        if (!raw || strUpper === 'SIN ESPECIFICAR' || strUpper === 'SIN INFORMACIÓN' || strUpper === 'SIN INFORMACION' || strUpper === '-') {
+          return 'Sin Información';
+        }
+
+        if (strUpper.includes('LOCAL CERRADO')) return 'Local Cerrado';
+        if (strUpper.includes('CLIENTE NO PERMITE')) return 'Cliente no permite';
+        if (strUpper.includes('DESPROGRAMAR CLIENTE')) return 'Desprogramar Cliente';
+        if (strUpper.includes('OTRO')) return 'Otro';
+
+        return raw;
       }
-
-      if (strUpper.includes('LOCAL CERRADO')) return 'Local Cerrado';
-      if (strUpper.includes('CLIENTE NO PERMITE')) return 'Cliente no permite';
-      if (strUpper.includes('DESPROGRAMAR CLIENTE')) return 'Desprogramar Cliente';
-      if (strUpper.includes('OTRO')) return 'Otro';
-
-      return raw;
     }
 
     $(document).ready(function() {
@@ -1439,7 +1441,7 @@
     /* Gráfico de Evolución Mensual IGNORA FILTRO DE MES PERO MANTIENE CLIENTE, TÉCNICO, LOCAL, DATES */
     function renderTrendChart() {
       const monthlyStats = {};
-      const dataWithoutMonth = getFilteredDataWithoutMonth(); // Usa la base con todos los filtros SALVO el del mes
+      const dataWithoutMonth = getFilteredDataWithoutMonth();
 
       dataWithoutMonth.forEach(d => {
         const mes = d['Mes'] || d['mes'];
@@ -1658,36 +1660,33 @@
       document.getElementById('tabla-1-container').innerHTML = html1;
     }
 
-    /* TABLA RESUMEN DE MOTIVOS CON ORDEN Y AGRUPACIÓN SOLICITADA */
+    /* TABLA RESUMEN DE MOTIVOS DINÁMICA SEGÚN PESTAÑA */
     function renderTablaMotivos(data, totalNO, grandTotal) {
-      const motivosStats = {
-        'Local Cerrado': 0,
-        'Cliente no permite': 0,
-        'Desprogramar Cliente': 0,
-        'Otro': 0,
-        'Sin Información': 0
-      };
-
+      const motivosStats = {};
       const noRealizadasData = data.filter(d => !isServicioRealizado(d));
 
       noRealizadasData.forEach(d => {
         const qty = getServiciosQty(d);
         const motivo = getMotivoNoServicio(d);
-        if (motivosStats.hasOwnProperty(motivo)) {
-          motivosStats[motivo] += qty;
-        } else {
-          motivosStats['Sin Información'] += qty;
-        }
+        if (!motivosStats[motivo]) motivosStats[motivo] = 0;
+        motivosStats[motivo] += qty;
       });
 
-      // Orden Estricto Solicitado
-      const ordenEstricto = [
-        'Local Cerrado',
-        'Cliente no permite',
-        'Desprogramar Cliente',
-        'Otro',
-        'Sin Información'
-      ];
+      let ordenFilas = [];
+
+      if (currentSheetKey === "urgencias") {
+        // En Urgencias se ordenan dinámicamente según las causas encontradas en la hoja
+        ordenFilas = Object.keys(motivosStats).sort((a, b) => motivosStats[b] - motivosStats[a]);
+      } else {
+        // En Ruta Preventiva se mantiene el orden estricto solicitado
+        ordenFilas = [
+          'Local Cerrado',
+          'Cliente no permite',
+          'Desprogramar Cliente',
+          'Otro',
+          'Sin Información'
+        ];
+      }
 
       let html = `
         <table>
@@ -1701,19 +1700,26 @@
           </thead>
           <tbody>`;
 
-      ordenEstricto.forEach(motivo => {
-        const cant = motivosStats[motivo];
-        const pctDelNO = totalNO > 0 ? ((cant / totalNO) * 100).toFixed(1) + '%' : '0.0%';
-        const pctDelTotal = grandTotal > 0 ? ((cant / grandTotal) * 100).toFixed(1) + '%' : '0.0%';
-
+      if (ordenFilas.length === 0) {
         html += `
           <tr>
-            <td class="left">• <strong>${motivo}</strong></td>
-            <td><strong>${cant}</strong></td>
-            <td><span class="qty-badge" style="font-weight:bold; color:#c62828;">${pctDelNO}</span></td>
-            <td><span class="qty-badge" style="font-weight:bold; color:var(--excel-green-dark);">${pctDelTotal}</span></td>
+            <td colspan="4" class="no-data">🎉 Sin servicios no realizados para los filtros seleccionados.</td>
           </tr>`;
-      });
+      } else {
+        ordenFilas.forEach(motivo => {
+          const cant = motivosStats[motivo] || 0;
+          const pctDelNO = totalNO > 0 ? ((cant / totalNO) * 100).toFixed(1) + '%' : '0.0%';
+          const pctDelTotal = grandTotal > 0 ? ((cant / grandTotal) * 100).toFixed(1) + '%' : '0.0%';
+
+          html += `
+            <tr>
+              <td class="left">• <strong>${motivo}</strong></td>
+              <td><strong>${cant}</strong></td>
+              <td><span class="qty-badge" style="font-weight:bold; color:#c62828;">${pctDelNO}</span></td>
+              <td><span class="qty-badge" style="font-weight:bold; color:var(--excel-green-dark);">${pctDelTotal}</span></td>
+            </tr>`;
+        });
+      }
 
       const totalPctNO_General = grandTotal > 0 ? ((totalNO / grandTotal) * 100).toFixed(1) + '%' : '0.0%';
 
