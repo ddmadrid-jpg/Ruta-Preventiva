@@ -1038,12 +1038,11 @@
       }
     }
 
-    // PARSEADOR DE FECHA UNIVERSAL (SOPORTA SERIALES DE EXCEL EJ: 46276, Y FORMATOS YYYY-MM-DD / DD-MM-YYYY)
+    // PARSEADOR DE FECHA UNIVERSAL (SOPORTA SERIALES DE EXCEL EJ: 46276)
     function parseDate(dateStr) {
       if (!dateStr) return null;
       const str = String(dateStr).trim();
 
-      // Detección de números de serie de fecha de Excel (Ej: 46276)
       if (/^\d{5}$/.test(str)) {
         const serial = parseInt(str, 10);
         const excelEpoch = new Date(1899, 11, 30);
@@ -1076,6 +1075,14 @@
         return `${dia}/${mes}/${anio}`;
       }
       return dateStr;
+    }
+
+    // OBTENER ÍNDICE CRONOLÓGICO DEL MES PARA ORDENAMIENTO
+    function getMesIndex(nombreMes) {
+      if (!nombreMes) return 99;
+      const str = String(nombreMes).trim().toLowerCase();
+      const idx = nombresMeses.findIndex(m => m.toLowerCase().startsWith(str.substring(0, 3)));
+      return idx !== -1 ? idx : 99;
     }
 
     $(document).ready(function() {
@@ -1266,6 +1273,16 @@
         return [...new Set(values.filter(Boolean))].sort();
       };
 
+      const getUniqueMesesCronologico = () => {
+        let values = [];
+        rawData.forEach(d => {
+          const m = d['Mes'] || d['mes'];
+          if (m) values.push(String(m).trim());
+        });
+        const unicos = [...new Set(values.filter(Boolean))];
+        return unicos.sort((a, b) => getMesIndex(a) - getMesIndex(b));
+      };
+
       const getUniqueLocalAndCCU = () => {
         let values = [];
         rawData.forEach(d => {
@@ -1292,7 +1309,7 @@
         });
       };
 
-      fillFilterUI('mes', getUnique(['Mes', 'mes']));
+      fillFilterUI('mes', getUniqueMesesCronologico());
       fillFilterUI('usuario', getUnique(['Usuario', 'STCYG', 'usuario']));
       fillFilterUI('localId', getUniqueLocalAndCCU());
       fillFilterUI('cliente', getUnique(['Nombre Fantasía', 'Nombre Fantasía ', 'Nombre de Fantasia', 'Nombre Fantasia', 'Nombre Receptor', 'Cliente', 'cliente', 'Oficina']));
@@ -1462,6 +1479,7 @@
       });
     }
 
+    /* GRÁFICO DE EVOLUCIÓN MENSUAL CON ORDEN CRONOLÓGICO ESTRICTO */
     function renderTrendChart() {
       const monthlyStats = {};
       const dataWithoutMonth = getFilteredDataWithoutMonth();
@@ -1480,7 +1498,8 @@
         }
       });
 
-      let labels = Object.keys(monthlyStats);
+      // ORDENAMIENTO CRONOLÓGICO ESTRICTO DE LOS MESES
+      let labels = Object.keys(monthlyStats).sort((a, b) => getMesIndex(a) - getMesIndex(b));
 
       if (labels.length > 13) {
         labels = labels.slice(-13);
@@ -1929,7 +1948,6 @@
       document.getElementById('tabla-2-container').innerHTML = html2;
     }
 
-    // JUSTIFICACIÓN VISITA NO REALIZADA ORDENADA DE LA FECHA MÁS RECIENTE A LA MÁS ANTIGUA
     function renderTablaNoRealizadas(data) {
       let noRealizadas = data.filter(d => !isServicioRealizado(d));
 
@@ -1938,7 +1956,6 @@
         return;
       }
 
-      // Orden descendente por fecha (Más reciente a más antigua)
       noRealizadas.sort((a, b) => {
         const rawA = a['Fecha/Hora Ejecución 1'] || a['Fecha Programada 2'] || a['Fecha'] || a['Fecha Realizado'] || a['Fecha/Hora'] || '';
         const rawB = b['Fecha/Hora Ejecución 1'] || b['Fecha Programada 2'] || b['Fecha'] || b['Fecha Realizado'] || b['Fecha/Hora'] || '';
@@ -2002,7 +2019,6 @@
       document.getElementById('tabla-no-realizadas-container').innerHTML = html;
     }
 
-    // DETALLE DE SERVICIOS REALIZADOS (SI) EN RUTA PREVENTIVA ORDENADO DE LA FECHA MÁS RECIENTE A LA MÁS ANTIGUA
     function renderTablaSiRealizadas(data) {
       let siRealizadas = data.filter(d => isServicioRealizado(d));
 
@@ -2011,7 +2027,6 @@
         return;
       }
 
-      // Orden descendente por fecha (Más reciente a más antigua)
       siRealizadas.sort((a, b) => {
         const rawA = a['Fecha/Hora Ejecución 1'] || a['Fecha Programada 2'] || a['Fecha'] || a['Fecha Realizado'] || a['Fecha/Hora'] || '';
         const rawB = b['Fecha/Hora Ejecución 1'] || b['Fecha Programada 2'] || b['Fecha'] || b['Fecha Realizado'] || b['Fecha/Hora'] || '';
