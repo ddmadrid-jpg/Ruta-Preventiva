@@ -177,7 +177,7 @@
       gap: 6px;
     }
 
-    /* Navegación por Pestañas (Tabs) */
+    /* Navegación por Pestañas */
     .dashboard-tabs {
       display: flex;
       background: var(--card-bg);
@@ -324,7 +324,6 @@
       box-sizing: border-box;
     }
 
-    /* Componente de Filtro Estilo Google Sheets */
     .gs-filter-box {
       border: 1px solid #dcdfe6;
       border-radius: 6px;
@@ -542,7 +541,6 @@
       text-align: left;
     }
 
-    /* Títulos Fijos (Sticky Header) al Hacer Scroll */
     thead tr th {
       background-color: var(--excel-green-header);
       color: #ffffff;
@@ -968,6 +966,7 @@
       return isNaN(num) ? 1 : num;
     }
 
+    // VALIDACIÓN OFICIAL DE REALIZADA EN RUTA PREVENTIVA
     function isServicioRealizado(d) {
       if (currentSheetKey === "urgencias") {
         const res = String(d['Pudo Resolver Problema'] || d['Pudo resolver problema'] || d['Resuelto'] || '').toUpperCase().trim();
@@ -1018,14 +1017,11 @@
       return d['Foto Columnas o Post Mix'] || d['Foto Equipo'] || d['Foto Motivo'] || d['Foto Salida FNE'] || '';
     }
 
-    // OBTENCIÓN EXCLUSIVA DEL MOTIVO SEGÚN PESTAÑA ACTIVA
     function getMotivoNoServicio(d) {
       if (currentSheetKey === "urgencias") {
-        // En Urgencias se lee directamente la columna "Resuelto" expuesta en la imagen
         const rawResuelto = String(d['Resuelto'] || d['Comentario No Resuelto'] || '').trim();
         return rawResuelto !== '' && rawResuelto !== '0' ? rawResuelto : 'Sin Información';
       } else {
-        // En Ruta Preventiva se mantiene la estandarización fija solicitada
         const raw = (d['Motivo No Servicio'] || d['motivo_no_servicio'] || d['Motivo'] || '').trim();
         const strUpper = raw.toUpperCase();
 
@@ -1040,6 +1036,46 @@
 
         return raw;
       }
+    }
+
+    // PARSEADOR DE FECHA UNIVERSAL (SOPORTA SERIALES DE EXCEL EJ: 46276, Y FORMATOS YYYY-MM-DD / DD-MM-YYYY)
+    function parseDate(dateStr) {
+      if (!dateStr) return null;
+      const str = String(dateStr).trim();
+
+      // Detección de números de serie de fecha de Excel (Ej: 46276)
+      if (/^\d{5}$/.test(str)) {
+        const serial = parseInt(str, 10);
+        const excelEpoch = new Date(1899, 11, 30);
+        return new Date(excelEpoch.getTime() + serial * 86400000);
+      }
+
+      const cleaned = str.split(' ')[0].replace(/\//g, '-');
+      const parts = cleaned.split('-');
+      if (parts.length === 3) {
+        if (parts[0].length === 4) return new Date(parts[0], parts[1] - 1, parts[2]);
+        if (parts[2].length === 4) return new Date(parts[2], parts[1] - 1, parts[0]);
+      }
+
+      const timestamp = Date.parse(str);
+      if (!isNaN(timestamp)) {
+        return new Date(timestamp);
+      }
+
+      return null;
+    }
+
+    // FORMATEADOR DE FECHA VISUAL LEGIBLE
+    function formatDiaMes(dateStr) {
+      if (!dateStr || dateStr === '-') return '-';
+      const parsed = parseDate(dateStr);
+      if (parsed && !isNaN(parsed.getTime())) {
+        const dia = String(parsed.getDate()).padStart(2, '0');
+        const mes = String(parsed.getMonth() + 1).padStart(2, '0');
+        const anio = parsed.getFullYear();
+        return `${dia}/${mes}/${anio}`;
+      }
+      return dateStr;
     }
 
     $(document).ready(function() {
@@ -1276,18 +1312,6 @@
       });
     }
 
-    function parseDate(dateStr) {
-      if (!dateStr) return null;
-      const cleaned = dateStr.split(' ')[0].replace(/\//g, '-');
-      const parts = cleaned.split('-');
-      if (parts.length === 3) {
-        if (parts[0].length === 4) return new Date(parts[0], parts[1] - 1, parts[2]);
-        if (parts[2].length === 4) return new Date(parts[2], parts[1] - 1, parts[0]);
-      }
-      return null;
-    }
-
-    /* OMITIR EL FILTRO DE MES PARA EL GRÁFICO DE EVOLUCIÓN MENSUAL */
     function getFilteredDataWithoutMonth() {
       const fUsuario = filtersState.usuario.selected;
       const fLocalId = filtersState.localId.selected;
@@ -1438,7 +1462,6 @@
       });
     }
 
-    /* Gráfico de Evolución Mensual IGNORA FILTRO DE MES PERO MANTIENE CLIENTE, TÉCNICO, LOCAL, DATES */
     function renderTrendChart() {
       const monthlyStats = {};
       const dataWithoutMonth = getFilteredDataWithoutMonth();
@@ -1660,7 +1683,6 @@
       document.getElementById('tabla-1-container').innerHTML = html1;
     }
 
-    /* TABLA RESUMEN DE MOTIVOS DINÁMICA SEGÚN PESTAÑA */
     function renderTablaMotivos(data, totalNO, grandTotal) {
       const motivosStats = {};
       const noRealizadasData = data.filter(d => !isServicioRealizado(d));
@@ -1675,10 +1697,8 @@
       let ordenFilas = [];
 
       if (currentSheetKey === "urgencias") {
-        // En Urgencias se ordenan dinámicamente según las causas encontradas en la hoja
         ordenFilas = Object.keys(motivosStats).sort((a, b) => motivosStats[b] - motivosStats[a]);
       } else {
-        // En Ruta Preventiva se mantiene el orden estricto solicitado
         ordenFilas = [
           'Local Cerrado',
           'Cliente no permite',
@@ -1735,7 +1755,6 @@
       document.getElementById('tabla-motivos-container').innerHTML = html;
     }
 
-    /* REGLA DE RUTA PREVENTIVA: ORDEN POR CÓDIGO Y TRATAMIENTO DE STCYG34 EN "HÍBRIDO" */
     function renderTabla2(data) {
       const t2Stats = {};
       data.forEach(d => {
@@ -1770,7 +1789,6 @@
 
       let grandNO = 0, grandSI = 0;
 
-      // En Ruta Preventiva se extrae STCYG34 para moverlo al final a la nueva categoría "Híbrido"
       let stcyg34Data = null;
       if (currentSheetKey === "preventiva") {
         stcyg34Data = { Schop: null, PostMix: null };
@@ -1784,7 +1802,6 @@
         }
       }
 
-      // Orden para asegurarnos que Post Mix aparezca ARRIBA de Schop si estamos en Ruta Preventiva
       let categoriasOrdenadas = Object.keys(t2Stats);
       if (currentSheetKey === "preventiva") {
         categoriasOrdenadas.sort((a, b) => {
@@ -1796,8 +1813,6 @@
 
       categoriasOrdenadas.forEach(cat => {
         let catSI = 0, catNO = 0;
-        
-        // Orden numérico de usuarios (STCYG01, STCYG02, etc.)
         const usuariosOrdenados = Object.keys(t2Stats[cat]).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
         usuariosOrdenados.forEach(usr => {
@@ -1841,7 +1856,6 @@
           </tr>`;
       });
 
-      // MÓDULO HÍBRIDO (Exclusivo para STCYG34 si está presente en el filtro activo)
       if (currentSheetKey === "preventiva" && stcyg34Data && (stcyg34Data.Schop || stcyg34Data.PostMix)) {
         let hibridoSI = 0, hibridoNO = 0;
 
@@ -1915,13 +1929,25 @@
       document.getElementById('tabla-2-container').innerHTML = html2;
     }
 
+    // JUSTIFICACIÓN VISITA NO REALIZADA ORDENADA DE LA FECHA MÁS RECIENTE A LA MÁS ANTIGUA
     function renderTablaNoRealizadas(data) {
-      const noRealizadas = data.filter(d => !isServicioRealizado(d));
+      let noRealizadas = data.filter(d => !isServicioRealizado(d));
 
       if (noRealizadas.length === 0) {
         document.getElementById('tabla-no-realizadas-container').innerHTML = `<div class="no-data">🎉 No hay casuística pendiente.</div>`;
         return;
       }
+
+      // Orden descendente por fecha (Más reciente a más antigua)
+      noRealizadas.sort((a, b) => {
+        const rawA = a['Fecha/Hora Ejecución 1'] || a['Fecha Programada 2'] || a['Fecha'] || a['Fecha Realizado'] || a['Fecha/Hora'] || '';
+        const rawB = b['Fecha/Hora Ejecución 1'] || b['Fecha Programada 2'] || b['Fecha'] || b['Fecha Realizado'] || b['Fecha/Hora'] || '';
+        const dateA = parseDate(rawA);
+        const dateB = parseDate(rawB);
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateB - dateA;
+      });
 
       let html = `
         <table>
@@ -1939,7 +1965,8 @@
 
       noRealizadas.forEach(d => {
         const tec = d['Usuario'] || d['Técnico'] || d['Tecnico'] || '-';
-        const fecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
+        const rawFecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
+        const fechaFormateada = formatDiaMes(rawFecha);
         const cliente = getNombreCliente(d);
         
         const motivo = getMotivoNoServicio(d);
@@ -1963,7 +1990,7 @@
         html += `
           <tr>
             <td class="left"><strong>${tec}</strong></td>
-            <td class="left">${fecha}</td>
+            <td class="left">${fechaFormateada}</td>
             <td class="left">${cliente}</td>
             <td class="left" style="color: #c62828; font-weight: 500;">${motivo}</td>
             <td class="left" style="font-size: 11px; color: #555;">${comentario}</td>
@@ -1975,14 +2002,25 @@
       document.getElementById('tabla-no-realizadas-container').innerHTML = html;
     }
 
-    /* DETALLE DE SERVICIOS REALIZADOS (SI) EN RUTA PREVENTIVA */
+    // DETALLE DE SERVICIOS REALIZADOS (SI) EN RUTA PREVENTIVA ORDENADO DE LA FECHA MÁS RECIENTE A LA MÁS ANTIGUA
     function renderTablaSiRealizadas(data) {
-      const siRealizadas = data.filter(d => isServicioRealizado(d));
+      let siRealizadas = data.filter(d => isServicioRealizado(d));
 
       if (siRealizadas.length === 0) {
         document.getElementById('tabla-si-realizadas-container').innerHTML = `<div class="no-data">Sin servicios realizados con los filtros seleccionados.</div>`;
         return;
       }
+
+      // Orden descendente por fecha (Más reciente a más antigua)
+      siRealizadas.sort((a, b) => {
+        const rawA = a['Fecha/Hora Ejecución 1'] || a['Fecha Programada 2'] || a['Fecha'] || a['Fecha Realizado'] || a['Fecha/Hora'] || '';
+        const rawB = b['Fecha/Hora Ejecución 1'] || b['Fecha Programada 2'] || b['Fecha'] || b['Fecha Realizado'] || b['Fecha/Hora'] || '';
+        const dateA = parseDate(rawA);
+        const dateB = parseDate(rawB);
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateB - dateA;
+      });
 
       let html = `
         <table>
@@ -2001,7 +2039,8 @@
 
       siRealizadas.forEach(d => {
         const tec = d['Usuario'] || d['Técnico'] || d['Tecnico'] || '-';
-        const fecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
+        const rawFecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
+        const fechaFormateada = formatDiaMes(rawFecha);
         const idCCU = getIdCCU(d);
         const cliente = getNombreCliente(d);
         const receptor = getNombreReceptor(d);
@@ -2020,7 +2059,7 @@
         html += `
           <tr>
             <td class="left"><strong>${tec}</strong></td>
-            <td class="left">${fecha}</td>
+            <td class="left">${fechaFormateada}</td>
             <td class="left" style="font-weight: 500;">${idCCU}</td>
             <td class="left">${cliente}</td>
             <td class="left" style="font-weight: 500;">${receptor}</td>
