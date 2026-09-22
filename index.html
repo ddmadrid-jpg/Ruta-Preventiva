@@ -985,8 +985,7 @@
     }
 
     function getServiciosQty(d) {
-      if (currentSheetKey === "urgencias" || currentSheetKey === "inspectivas") return 1;
-      if (currentSheetKey === "ejecuciones") return 1; // Se contabiliza 1 por fila/solicitud
+      if (currentSheetKey === "urgencias" || currentSheetKey === "inspectivas" || currentSheetKey === "ejecuciones") return 1;
       const val = d['Servicios'] || d['servicios'] || d['SERVICIOS'] || d['Cant'] || d['Cantidad'];
       const num = parseInt(val, 10);
       return isNaN(num) ? 1 : num;
@@ -2301,7 +2300,7 @@
       document.getElementById('tabla-no-realizadas-container').innerHTML = html;
     }
 
-    /* RENDER EXCLUSIVO TABLA DE REALIZADOS (SOPORTA COLUMNAS DE EJECUCIONES: COD TECNICO, PERSONA QUE RE, IMAGEN 1 Y 2) */
+    /* RENDER EXCLUSIVO TABLA DE REALIZADOS (INCLUYE COLUMNA N° SOLICITUD EN EJECUCIONES) */
     function renderTablaSiRealizadas(data) {
       let siRealizadas = data.filter(d => isServicioRealizado(d));
 
@@ -2326,9 +2325,10 @@
         <table>
           <thead>
             <tr>
+              ${esEjecuciones ? '<th class="left">N° Solicitud</th>' : ''}
               <th class="left">${esEjecuciones ? 'Cód. Técnico' : 'Técnico / Inspector'}</th>
               <th class="left">Fecha</th>
-              <th class="left">${esEjecuciones ? 'Proceso / ID' : 'ID CCU'}</th>
+              <th class="left">${esEjecuciones ? 'Proceso' : 'ID CCU'}</th>
               <th class="left">${esEjecuciones ? 'Receptor (Persona que Re)' : 'Cliente (Nombre Fantasía)'}</th>
               <th class="left">${esEjecuciones ? 'Comentario / Proceso' : 'Nombre Receptor'}</th>
               <th style="text-align:center;">${esEjecuciones ? 'Imágenes (1 y 2)' : 'Foto Columnas / Post Mix'}</th>
@@ -2340,7 +2340,8 @@
         const tec = d['Cod Tecnico'] || d['Cod Técnico'] || d['Usuario'] || d['Técnico'] || d['Tecnico'] || d['Inspector'] || d['Inspector/a'] || '-';
         const rawFecha = d['Fecha'] || d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
         const fechaFormateada = formatDiaMes(rawFecha);
-        const idCCU = esEjecuciones ? (d['Proceso'] || d['Número'] || getIdCCU(d)) : getIdCCU(d);
+        const numSolicitud = d['Número'] || d['Número '] || d['Numero'] || d['Número de Solicitud'] || '-';
+        const idCCU = esEjecuciones ? (d['Proceso'] || '-') : getIdCCU(d);
         const cliente = esEjecuciones ? getNombreReceptor(d) : getNombreCliente(d);
         const receptor = esEjecuciones ? (d['Proceso'] || '-') : getNombreReceptor(d);
         
@@ -2361,6 +2362,7 @@
 
         html += `
           <tr>
+            ${esEjecuciones ? `<td class="left" style="font-weight:700; color:var(--excel-green-dark);">${numSolicitud}</td>` : ''}
             <td class="left"><strong>${tec}</strong></td>
             <td class="left">${fechaFormateada}</td>
             <td class="left" style="font-weight: 500;">${idCCU}</td>
