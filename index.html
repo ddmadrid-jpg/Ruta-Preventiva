@@ -985,7 +985,8 @@
     }
 
     function getServiciosQty(d) {
-      if (currentSheetKey === "urgencias" || currentSheetKey === "inspectivas" || currentSheetKey === "ejecuciones") return 1;
+      if (currentSheetKey === "urgencias" || currentSheetKey === "inspectivas") return 1;
+      if (currentSheetKey === "ejecuciones") return 1; // Se contabiliza 1 por fila/solicitud
       const val = d['Servicios'] || d['servicios'] || d['SERVICIOS'] || d['Cant'] || d['Cantidad'];
       const num = parseInt(val, 10);
       return isNaN(num) ? 1 : num;
@@ -1008,17 +1009,15 @@
       }
     }
 
-    // VALIDACIÓN DE TIPO DE ACTIVO (MAPPING EXPLICITO SOLICITADO PARA EJECUCIONES Y DEMÁS PEAÑAS)
+    // VALIDACIÓN DE TIPO DE ACTIVO (MAPPING EXPLICITO SOLICITADO PARA EJECUCIONES Y DEMÁS PESTAÑAS)
     function getTipoActivo(d) {
       const val = d['Tipo De Activo'] || d['Tipo De Activo '] || d['Tipo de Maquina'] || d['Tipo de Máquina'] || d['Tipo de Activo'] || d['Tipo de Activo '] || d['Activos'] || d['Categoria'] || d['Categoría'] || d['Tipo Urgencia'] || '';
       const str = String(val).toUpperCase().trim();
 
-      // Mapeo explicito de Schop
       if (str === 'COLUMNA' || str.includes('COLUMNA') || str.includes('ENFRIADOR SCHOP') || str.includes('BLADE') || str.includes('SCHOP')) {
         return 'Schop';
       }
 
-      // Mapeo explicito de Post Mix
       if (str.includes('GRANIZADORA') || str.includes('MAQUINA DE HIELO') || str.includes('MÁQUINA DE HIELO') || str.includes('ENFRIADOR POSTMIX') || str.includes('ENFRIADOR POST MIX') || str.includes('POST') || str.includes('POSTMIX')) {
         return 'Post Mix';
       }
@@ -1202,7 +1201,7 @@
           $('#bloque-inspectivas-rechazos').show();
         } else if (currentSheetKey === "ejecuciones") {
           $('#main-title').html('<i class="fa-solid fa-gears" style="font-size: 20px; color: #004b93;"></i> Dashboard Ejecuciones');
-          $('#kpi-label-1').text('Total Ejecuciones');
+          $('#kpi-label-1').text('Total Solicitudes');
           $('#kpi-label-2').text('Efectividad Global');
           $('#kpi-label-3').text('Solicitudes Anuladas');
           $('#kpi-subtext-legend').html('<span style="color:#006100; font-weight:bold;">● Schop</span> | <span style="color:#004b93; font-weight:bold;">● Post Mix</span>');
@@ -1493,22 +1492,54 @@
       let countSchop = 0;
       let countPostMix = 0;
 
-      data.forEach(d => {
-        const qty = getServiciosQty(d);
-        
-        if (isServicioRealizado(d)) {
-          totalSI += qty;
-        } else {
-          totalNO += qty;
-        }
+      if (currentSheetKey === "ejecuciones") {
+        // AGRUPACIÓN POR NÚMERO DE SOLICITUD ÚNICA EN EJECUCIONES (COLUMNA N)
+        const solicitudesMap = {};
 
-        const tipo = getTipoActivo(d).toUpperCase();
-        if (tipo.includes('SCHOP')) {
-          countSchop += qty;
-        } else if (tipo.includes('POST')) {
-          countPostMix += qty;
-        }
-      });
+        data.forEach(d => {
+          const numSol = String(d['Número'] || d['Número '] || d['Numero'] || d['Número de Solicitud'] || d['Proceso'] || Math.random()).trim();
+          const esSI = isServicioRealizado(d);
+          const tipo = getTipoActivo(d).toUpperCase();
+
+          if (!solicitudesMap[numSol]) {
+            solicitudesMap[numSol] = { realizado: esSI, tipo: tipo };
+          } else {
+            if (esSI) solicitudesMap[numSol].realizado = true;
+          }
+        });
+
+        Object.values(solicitudesMap).forEach(sol => {
+          if (sol.realizado) {
+            totalSI++;
+          } else {
+            totalNO++;
+          }
+
+          if (sol.tipo.includes('SCHOP')) {
+            countSchop++;
+          } else if (sol.tipo.includes('POST')) {
+            countPostMix++;
+          }
+        });
+
+      } else {
+        data.forEach(d => {
+          const qty = getServiciosQty(d);
+          
+          if (isServicioRealizado(d)) {
+            totalSI += qty;
+          } else {
+            totalNO += qty;
+          }
+
+          const tipo = getTipoActivo(d).toUpperCase();
+          if (tipo.includes('SCHOP')) {
+            countSchop += qty;
+          } else if (tipo.includes('POST')) {
+            countPostMix += qty;
+          }
+        });
+      }
 
       const grandTotal = totalSI + totalNO;
       const pctSI = grandTotal > 0 ? ((totalSI / grandTotal) * 100).toFixed(1) : '0.0';
@@ -1527,7 +1558,7 @@
         const promCoord = calcularPromedioCoordinacionDias(data);
         document.getElementById('kpi-coord-dias').innerText = `${promCoord} días`;
       } else if (currentSheetKey === "ejecuciones") {
-        document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Ejecuciones Cerradas`;
+        document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Solicitudes Cerradas`;
         document.getElementById('kpi-no-count').innerText = `${totalNO.toLocaleString()} Solicitudes Anuladas`;
       } else {
         document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Servicios Realizados`;
@@ -1617,19 +1648,49 @@
       const monthlyStats = {};
       const dataWithoutMonth = getFilteredDataWithoutMonth();
 
-      dataWithoutMonth.forEach(d => {
-        const mes = d['Mes'] || d['mes'];
-        if (!mes) return;
+      if (currentSheetKey === "ejecuciones") {
+        // AGRUPACIÓN POR SOLICITUD ÚNICA POR MES EN EJECUCIONES
+        const solPorMesMap = {};
 
-        const qty = getServiciosQty(d);
-        if (!monthlyStats[mes]) monthlyStats[mes] = { SI: 0, NO: 0 };
+        dataWithoutMonth.forEach(d => {
+          const mes = d['Mes'] || d['mes'];
+          if (!mes) return;
 
-        if (isServicioRealizado(d)) {
-          monthlyStats[mes].SI += qty;
-        } else {
-          monthlyStats[mes].NO += qty;
-        }
-      });
+          const numSol = String(d['Número'] || d['Número '] || d['Numero'] || d['Número de Solicitud'] || Math.random()).trim();
+          const keyMesSol = `${mes}_${numSol}`;
+          const esSI = isServicioRealizado(d);
+
+          if (!solPorMesMap[keyMesSol]) {
+            solPorMesMap[keyMesSol] = { mes: mes, realizado: esSI };
+          } else {
+            if (esSI) solPorMesMap[keyMesSol].realizado = true;
+          }
+        });
+
+        Object.values(solPorMesMap).forEach(item => {
+          if (!monthlyStats[item.mes]) monthlyStats[item.mes] = { SI: 0, NO: 0 };
+          if (item.realizado) {
+            monthlyStats[item.mes].SI++;
+          } else {
+            monthlyStats[item.mes].NO++;
+          }
+        });
+
+      } else {
+        dataWithoutMonth.forEach(d => {
+          const mes = d['Mes'] || d['mes'];
+          if (!mes) return;
+
+          const qty = getServiciosQty(d);
+          if (!monthlyStats[mes]) monthlyStats[mes] = { SI: 0, NO: 0 };
+
+          if (isServicioRealizado(d)) {
+            monthlyStats[mes].SI += qty;
+          } else {
+            monthlyStats[mes].NO += qty;
+          }
+        });
+      }
 
       let labels = Object.keys(monthlyStats).sort((a, b) => getMesIndex(a) - getMesIndex(b));
 
