@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Ejecutivo - Servicio Técnico</title>
 
-  <!-- BLOQUEO DE INDEXACIÓN EN BUSCADORES (GOOGLE, BING, ETC.) -->
+  <!-- BLOQUEO DE INDEXACIÓN EN BUSCADORES -->
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <meta name="googlebot" content="noindex, nofollow">
   <meta name="referrer" content="no-referrer">
@@ -64,7 +64,6 @@
       transition: opacity 0.3s ease;
     }
 
-    /* Vaso de Cerveza / Chopp Ultra Realista en SVG */
     .beer-loader-wrap {
       width: 110px;
       height: 130px;
@@ -702,7 +701,7 @@
     </div>
   </div>
 
-  <!-- Navegación por Pestañas -->
+  <!-- Navegación por Pestañas Integrada -->
   <div class="dashboard-tabs">
     <button class="tab-btn active" data-sheet="preventiva">
       <i class="fa-solid fa-calendar-check"></i> Ruta Preventiva
@@ -712,6 +711,9 @@
     </button>
     <button class="tab-btn" data-sheet="ejecuciones">
       <i class="fa-solid fa-gears"></i> Ejecuciones
+    </button>
+    <button class="tab-btn" data-sheet="inspectivas">
+      <i class="fa-solid fa-clipboard-check"></i> Visitas Inspectivas
     </button>
   </div>
 
@@ -918,7 +920,8 @@
     const SHEETS_URLS = {
       preventiva: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHJUM26MwbPurx5FdJGQc-I-vlfwyEZYbPGeYE0F5HxEWpbMyhVeJpJKK7XjCD6No8RZCfeHgWaxZZ/pub?output=csv",
       urgencias: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTNzXfjkM4mtZrHyPjzSVqjYOTG0tVFReUG3FPpR-nkyCud1hoR8rRPpqPToiz82Vmp0A5ubJqz3zx/pub?output=csv",
-      ejecuciones: ""
+      ejecuciones: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQX1dUNGJcCrXEaZU5O-7NgAlGE506fg1arGc60-qd1TTPK3W_aM5NnK_drTT1in_HyH7-FbeLI-adg/pub?output=csv",
+      inspectivas: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTNUpNZI_Uxbh0nykMQDOgK7hBIqpDVW860iEPTwlvbEM9cYita7DU0CF80xCbOyVxKnc8CY-Lij8k0/pub?output=csv"
     };
 
     let currentSheetKey = "preventiva";
@@ -965,17 +968,20 @@
     }
 
     function getServiciosQty(d) {
-      if (currentSheetKey === "urgencias") return 1;
+      if (currentSheetKey === "urgencias" || currentSheetKey === "inspectivas") return 1;
       const val = d['Servicios'] || d['servicios'] || d['SERVICIOS'] || d['Cant'] || d['Cantidad'];
       const num = parseInt(val, 10);
       return isNaN(num) ? 1 : num;
     }
 
-    // VALIDACIÓN OFICIAL DE REALIZADA EN RUTA PREVENTIVA
+    // VALIDACIÓN OFICIAL DE REALIZADA EN CADA SECCIÓN
     function isServicioRealizado(d) {
       if (currentSheetKey === "urgencias") {
         const res = String(d['Pudo Resolver Problema'] || d['Pudo resolver problema'] || d['Resuelto'] || '').toUpperCase().trim();
         return res === "SI" || res === "1" || res === "RESUELTO";
+      } else if (currentSheetKey === "inspectivas") {
+        const res = String(d['Estado'] || d['Aprobado'] || d['Resultado'] || d['Realizada'] || '').toUpperCase().trim();
+        return res === "SI" || res === "1" || res === "APROBADO" || res === "REALIZADA";
       } else {
         const realizada = String(d['Realizada'] || d['Realizada 2'] || d['Cumplimiento'] || '').toUpperCase().trim();
         return realizada === "SI" || realizada === "1" || realizada === "EJECUTADA" || realizada === "REALIZADA";
@@ -1098,11 +1104,6 @@
       // Cambio de Pestañas
       $('.tab-btn').on('click', function() {
         const targetSheet = $(this).data('sheet');
-        
-        if (targetSheet === "ejecuciones" && !SHEETS_URLS.ejecuciones) {
-          alert("La hoja de Ejecuciones estará disponible próximamente.");
-          return;
-        }
 
         $('.tab-btn').removeClass('active');
         $(this).addClass('active');
@@ -1120,6 +1121,30 @@
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Resueltas)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle de Urgencias No Resueltas');
           $('#container-si-realizadas').hide();
+        } else if (currentSheetKey === "inspectivas") {
+          $('#main-title').html('<i class="fa-solid fa-clipboard-check" style="font-size: 20px; color: var(--pepsi-blue);"></i> Dashboard Visitas Inspectivas');
+          $('#kpi-label-1').text('Total Visitas');
+          $('#kpi-label-2').text('Porcentaje Aprobación');
+          $('#kpi-label-3').text('Visitas Observadas / Pendientes');
+          $('#kpi-subtext-legend').html('<span style="color:#006100; font-weight:bold;">● Schop</span> | <span style="color:#004b93; font-weight:bold;">● Post Mix</span>');
+          $('#tabla-1-title').text('Resumen por Tipo de Activo');
+          $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen de Observaciones');
+          $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Aprobadas)');
+          $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle de Visitas Con Observaciones');
+          $('#container-si-realizadas').show();
+          $('#tabla-si-title').html('<i class="fa-solid fa-circle-check"></i> Detalle Visitas Aprobadas (SI)');
+        } else if (currentSheetKey === "ejecuciones") {
+          $('#main-title').html('<i class="fa-solid fa-gears" style="font-size: 20px; color: #004b93;"></i> Dashboard Ejecuciones');
+          $('#kpi-label-1').text('Total Ejecuciones');
+          $('#kpi-label-2').text('Efectividad Global');
+          $('#kpi-label-3').text('No Ejecutadas');
+          $('#kpi-subtext-legend').html('<span style="color:#006100; font-weight:bold;">● Schop</span> | <span style="color:#004b93; font-weight:bold;">● Post Mix</span>');
+          $('#tabla-1-title').text('Resumen por Tipo de Activo');
+          $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen de Motivos No Ejecutados');
+          $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Ejecutadas)');
+          $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle No Ejecutadas');
+          $('#container-si-realizadas').show();
+          $('#tabla-si-title').html('<i class="fa-solid fa-circle-check"></i> Detalle Ejecutadas (SI)');
         } else {
           $('#main-title').html('<i class="fa-solid fa-chart-line" style="font-size: 20px; color: var(--primary-green);"></i> Dashboard Ruta Preventiva');
           $('#kpi-label-1').text('Total Servicios');
@@ -1301,7 +1326,8 @@
 
       const fillFilterUI = (filterKey, valuesArray) => {
         const $group = $(`.filter-group[data-filter="${filterKey}"]`);
-        const $list = $group.find('.gs-options-list');$list.empty();
+        const $list = $group.find('.gs-options-list');
+        $list.empty();
 
         valuesArray.forEach((val, idx) => {
           $list.append(`
@@ -1314,7 +1340,7 @@
       };
 
       fillFilterUI('mes', getUniqueMesesCronologico());
-      fillFilterUI('usuario', getUnique(['Usuario', 'STCYG', 'usuario']));
+      fillFilterUI('usuario', getUnique(['Usuario', 'STCYG', 'usuario', 'Inspector', 'Inspector/a']));
       fillFilterUI('localId', getUniqueLocalAndCCU());
       fillFilterUI('cliente', getUnique(['Nombre Fantasía', 'Nombre Fantasía ', 'Nombre de Fantasia', 'Nombre Fantasia', 'Nombre Receptor', 'Cliente', 'cliente', 'Oficina']));
     }
@@ -1343,7 +1369,7 @@
       const fFin = fFinStr ? new Date(fFinStr) : null;
 
       return rawData.filter(d => {
-        const dUsuario = String(d['Usuario'] || d['usuario'] || '').trim();
+        const dUsuario = String(d['Usuario'] || d['usuario'] || d['Inspector'] || d['Inspector/a'] || '').trim();
         const dLocal = String(d['Local'] || '').trim();
         const dIdCCU = String(d['ID CCU'] || d['ID'] || d['Id CCU'] || d['ID Cliente (Escaneado)'] || d['ID Cliente (Manual)'] || '').trim();
         const dCliente = String(getNombreCliente(d)).trim();
@@ -1410,6 +1436,9 @@
       if (currentSheetKey === "urgencias") {
         document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Casos Resueltos`;
         document.getElementById('kpi-no-count').innerText = `${totalNO.toLocaleString()} Casos No Resueltos`;
+      } else if (currentSheetKey === "inspectivas") {
+        document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Visitas Aprobadas`;
+        document.getElementById('kpi-no-count').innerText = `${totalNO.toLocaleString()} Con Observaciones`;
       } else {
         document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Servicios Realizados`;
         document.getElementById('kpi-no-count').innerText = `${totalNO.toLocaleString()} Servicios Pendientes`;
@@ -1424,7 +1453,7 @@
       renderTabla2(data);
       renderTablaNoRealizadas(data);
       
-      if (currentSheetKey === "preventiva") {
+      if (currentSheetKey === "preventiva" || currentSheetKey === "inspectivas" || currentSheetKey === "ejecuciones") {
         renderTablaSiRealizadas(data);
       }
     }
@@ -1718,7 +1747,7 @@
 
       let ordenFilas = [];
 
-      if (currentSheetKey === "urgencias") {
+      if (currentSheetKey === "urgencias" || currentSheetKey === "inspectivas" || currentSheetKey === "ejecuciones") {
         ordenFilas = Object.keys(motivosStats).sort((a, b) => motivosStats[b] - motivosStats[a]);
       } else {
         ordenFilas = [
@@ -1782,8 +1811,8 @@
       data.forEach(d => {
         const qty = getServiciosQty(d);
         const cat = getCategoriaTecnico(d);
-        const usr = d['Usuario'] || 'Sin Usuario';
-        const tec = d['Técnico'] || d['Tecnico'] || d['Jefe de Ventas'] || 'Sin Técnico';
+        const usr = d['Usuario'] || d['usuario'] || d['Inspector'] || d['Inspector/a'] || 'Sin Usuario';
+        const tec = d['Técnico'] || d['Tecnico'] || d['Jefe de Ventas'] || d['Inspector'] || d['Inspector/a'] || 'Sin Técnico';
 
         if(!t2Stats[cat]) t2Stats[cat] = {};
         if(!t2Stats[cat][usr]) t2Stats[cat][usr] = { tecnico: tec, SI: 0, NO: 0 };
@@ -1973,7 +2002,7 @@
         <table>
           <thead>
             <tr>
-              <th class="left">Técnico</th>
+              <th class="left">Técnico / Inspector</th>
               <th class="left">Fecha</th>
               <th class="left">Cliente</th>
               <th class="left">Motivo / Resuelto</th>
@@ -1984,13 +2013,13 @@
           <tbody>`;
 
       noRealizadas.forEach(d => {
-        const tec = d['Usuario'] || d['Técnico'] || d['Tecnico'] || '-';
+        const tec = d['Usuario'] || d['Técnico'] || d['Tecnico'] || d['Inspector'] || d['Inspector/a'] || '-';
         const rawFecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
         const fechaFormateada = formatDiaMes(rawFecha);
         const cliente = getNombreCliente(d);
         
         const motivo = getMotivoNoServicio(d);
-        const comentario = d['Comentario No Resuelto'] || d['Comentario Motivo'] || d['Comentario'] || '-';
+        const comentario = d['Comentario No Resuelto'] || d['Comentario Motivo'] || d['Comentario'] || d['Observaciones'] || '-';
         
         const fotoUrl1 = d['Foto Equipo'] || d['Foto Motivo'] || d['Foto Columnas o Post Mix'] || '';
         const fotoUrl2 = d['Foto Equipo 2'] || d['Foto Salida FNE'] || '';
@@ -2044,7 +2073,7 @@
         <table>
           <thead>
             <tr>
-              <th class="left">Técnico</th>
+              <th class="left">Técnico / Inspector</th>
               <th class="left">Fecha</th>
               <th class="left">ID CCU</th>
               <th class="left">Cliente (Nombre Fantasía)</th>
@@ -2056,7 +2085,7 @@
           <tbody>`;
 
       siRealizadas.forEach(d => {
-        const tec = d['Usuario'] || d['Técnico'] || d['Tecnico'] || '-';
+        const tec = d['Usuario'] || d['Técnico'] || d['Tecnico'] || d['Inspector'] || d['Inspector/a'] || '-';
         const rawFecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
         const fechaFormateada = formatDiaMes(rawFecha);
         const idCCU = getIdCCU(d);
