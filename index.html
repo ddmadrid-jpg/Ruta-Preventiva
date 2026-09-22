@@ -920,11 +920,11 @@
       </div>
     </div>
 
-    <!-- FILA 3 (ABAJO DEL TODO): Desglose por Categoría y Técnico a Ancho Completo -->
+    <!-- FILA 3 (ABAJO DEL TODO): Desglose por Categoría y Técnico / Ranking de Solicitudes Únicas en Ejecuciones -->
     <div class="grid-row-full">
       <div class="table-container">
         <div class="table-header">
-          <span>Desglose por Categoría y Técnico</span>
+          <span id="tabla-2-title">Desglose por Categoría y Técnico</span>
         </div>
         <div id="tabla-2-container"></div>
       </div>
@@ -1177,6 +1177,7 @@
           $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen de Motivos No Resueltos');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Resueltas)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle de Urgencias No Resueltas');
+          $('#tabla-2-title').text('Desglose por Categoría y Técnico');
           $('#col-motivos-no-realizados').show();
           $('#container-si-realizadas').hide();
           $('#container-no-realizadas').show();
@@ -1192,6 +1193,7 @@
           $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen Causa No Factible / Observaciones');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Factibles)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle Puntos No Factibles');
+          $('#tabla-2-title').text('Desglose por Categoría y Técnico');
           $('#col-motivos-no-realizados').show();
           $('#container-si-realizadas').show();
           $('#container-no-realizadas').show();
@@ -1206,6 +1208,7 @@
           $('#kpi-subtext-legend').html('<span style="color:#006100; font-weight:bold;">● Schop</span> | <span style="color:#004b93; font-weight:bold;">● Post Mix</span>');
           $('#tabla-1-title').text('Resumen por Tipo de Activo');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Ejecutadas)');
+          $('#tabla-2-title').text('Ranking de Solicitudes Únicas por Código de Técnico');
           $('#container-si-realizadas').show().css('width', '100%');
           $('#container-no-realizadas').hide();
           $('#col-motivos-no-realizados').hide();
@@ -1222,6 +1225,7 @@
           $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen de Motivos No Realizados');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% SI)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Justificación Visita No Realizada');
+          $('#tabla-2-title').text('Desglose por Categoría y Técnico');
           $('#col-motivos-no-realizados').show();
           $('#container-si-realizadas').show();
           $('#container-no-realizadas').show();
@@ -2054,6 +2058,88 @@
     }
 
     function renderTabla2(data) {
+      // TABLA RESUMEN POR CÓDIGO DE TÉCNICO Y SOLICITUDES ÚNICAS EXCLUSIVA PARA EJECUCIONES
+      if (currentSheetKey === "ejecuciones") {
+        const tecSolMap = {};
+        const solicitudesProcesadas = new Set();
+
+        data.forEach(d => {
+          const tec = String(d['Cod Tecnico'] || d['Cod Técnico'] || d['Tecnico'] || d['Usuario'] || 'Sin Asignar').trim();
+          const numSol = String(d['Número'] || d['Número '] || d['Numero'] || d['Número de Solicitud'] || Math.random()).trim();
+          const esSI = isServicioRealizado(d);
+
+          if (!tecSolMap[tec]) {
+            tecSolMap[tec] = { cerradas: new Set(), anuladas: new Set(), totalSol: new Set() };
+          }
+
+          tecSolMap[tec].totalSol.add(numSol);
+
+          if (esSI) {
+            tecSolMap[tec].cerradas.add(numSol);
+          } else {
+            tecSolMap[tec].anuladas.add(numSol);
+          }
+        });
+
+        // Ordenar técnicos por mayor cantidad de solicitudes cerradas
+        const listaTecnicos = Object.keys(tecSolMap).sort((a, b) => tecSolMap[b].cerradas.size - tecSolMap[a].cerradas.size);
+
+        let htmlEjec = `
+          <table>
+            <thead>
+              <tr>
+                <th class="left">Código de Técnico</th>
+                <th>Solicitudes Cerradas (SI)</th>
+                <th>Solicitudes Anuladas (NO)</th>
+                <th>Total Solicitudes Únicas</th>
+                <th>% Cumplimiento / Efectividad</th>
+              </tr>
+            </thead>
+            <tbody>`;
+
+        let totalGeneralCerradas = 0;
+        let totalGeneralAnuladas = 0;
+        let setTotalGeneral = new Set();
+
+        listaTecnicos.forEach(tec => {
+          const item = tecSolMap[tec];
+          const cantCerradas = item.cerradas.size;
+          const cantAnuladas = item.anuladas.size;
+          const totalTec = item.totalSol.size;
+          const pct = totalTec > 0 ? ((cantCerradas / totalTec) * 100).toFixed(1) + '%' : '0.0%';
+
+          totalGeneralCerradas += cantCerradas;
+          totalGeneralAnuladas += cantAnuladas;
+          item.totalSol.forEach(s => setTotalGeneral.add(s));
+
+          htmlEjec += `
+            <tr>
+              <td class="left"><strong>${tec}</strong></td>
+              <td style="color:var(--excel-green-dark); font-weight:bold;">${cantCerradas}</td>
+              <td style="color:#c62828;">${cantAnuladas}</td>
+              <td><strong>${totalTec}</strong></td>
+              <td><strong>${pct}</strong></td>
+            </tr>`;
+        });
+
+        const grandTotSol = setTotalGeneral.size;
+        const pctGeneral = grandTotSol > 0 ? ((totalGeneralCerradas / grandTotSol) * 100).toFixed(1) + '%' : '0.0%';
+
+        htmlEjec += `
+          <tr class="total-general">
+            <td class="left">Total General Solicitudes</td>
+            <td>${totalGeneralCerradas}</td>
+            <td>${totalGeneralAnuladas}</td>
+            <td>${grandTotSol}</td>
+            <td>${pctGeneral}</td>
+          </tr>
+          </tbody></table>`;
+
+        document.getElementById('tabla-2-container').innerHTML = htmlEjec;
+        return;
+      }
+
+      // VISTA TRADICIONAL POR CATEGORÍA Y TÉCNICO PARA PREVENTIVA, URGENCIAS E INSPECTIVAS
       const t2Stats = {};
       data.forEach(d => {
         const qty = getServiciosQty(d);
