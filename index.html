@@ -870,7 +870,7 @@
     
     <!-- FILA 1: Resumen Tipo Activo (Izquierda) + Resumen Motivos No Realizados (Derecha) -->
     <div class="grid-row-two-col">
-      <div class="grid-col-half">
+      <div class="grid-col-half" id="col-resumen-activo">
         <div class="table-container">
           <div class="table-header">
             <span id="tabla-1-title">Resumen por Tipo de Activo</span>
@@ -879,7 +879,7 @@
         </div>
       </div>
 
-      <div class="grid-col-half">
+      <div class="grid-col-half" id="col-motivos-no-realizados">
         <div class="table-container">
           <div class="table-header" style="background-color: #fff8e1; color: #b78103;">
             <span id="tabla-motivos-title"><i class="fa-solid fa-list-check"></i> Resumen de Motivos (No Realizados / No Resueltos)</span>
@@ -910,7 +910,7 @@
         </div>
       </div>
 
-      <div class="grid-col-half">
+      <div class="grid-col-half" id="container-no-realizadas">
         <div class="table-container">
           <div class="table-header" style="background-color: #fff3f3; color: #c62828;">
             <span id="tabla-no-title"><i class="fa-solid fa-triangle-exclamation"></i> Justificación Visita No Realizada</span>
@@ -985,13 +985,13 @@
     }
 
     function getServiciosQty(d) {
-      if (currentSheetKey === "urgencias" || currentSheetKey === "inspectivas") return 1;
+      if (currentSheetKey === "urgencias" || currentSheetKey === "inspectivas" || currentSheetKey === "ejecuciones") return 1;
       const val = d['Servicios'] || d['servicios'] || d['SERVICIOS'] || d['Cant'] || d['Cantidad'];
       const num = parseInt(val, 10);
       return isNaN(num) ? 1 : num;
     }
 
-    // VALIDACIÓN OFICIAL DE FACTIBILIDAD Y CUMPLIMIENTO EN CADA PESTAÑA (SOPORTA "Aprobada" DE COLUMNA W)
+    // VALIDACIÓN OFICIAL DE FACTIBILIDAD, CERRADO Y CUMPLIMIENTO EN CADA PESTAÑA
     function isServicioRealizado(d) {
       if (currentSheetKey === "urgencias") {
         const res = String(d['Pudo Resolver Problema'] || d['Pudo resolver problema'] || d['Resuelto'] || '').toUpperCase().trim();
@@ -999,18 +999,30 @@
       } else if (currentSheetKey === "inspectivas") {
         const res = String(d['Estado'] || d['Aprobado'] || d['Resultado'] || d['Factible'] || d['Realizada'] || '').toUpperCase().trim();
         return res === "SI" || res === "1" || res === "APROBADA" || res === "APROBADO" || res === "FACTIBLE" || res === "REALIZADA";
+      } else if (currentSheetKey === "ejecuciones") {
+        const estadoSolicitud = String(d['Estado Solicitud'] || d['Estado'] || '').toUpperCase().trim();
+        return estadoSolicitud.includes("CERRADA") || estadoSolicitud === "CERRADO" || estadoSolicitud === "SI";
       } else {
         const realizada = String(d['Realizada'] || d['Realizada 2'] || d['Cumplimiento'] || '').toUpperCase().trim();
         return realizada === "SI" || realizada === "1" || realizada === "EJECUTADA" || realizada === "REALIZADA";
       }
     }
 
-    // VALIDACIÓN DE TIPO DE ACTIVO (SOPORTA VARIANTES "Postmix" Y "Post Mix")
+    // VALIDACIÓN DE TIPO DE ACTIVO (MAPPING EXPLICITO SOLICITADO PARA EJECUCIONES Y DEMÁS PEAÑAS)
     function getTipoActivo(d) {
-      const val = d['Tipo de Maquina'] || d['Tipo de Máquina'] || d['Tipo de Activo'] || d['Tipo de Activo '] || d['Activos'] || d['Categoria'] || d['Categoría'] || d['Tipo Urgencia'] || '';
-      const str = String(val).toUpperCase();
-      if (str.includes('SCHOP')) return 'Schop';
-      if (str.includes('POST')) return 'Post Mix';
+      const val = d['Tipo De Activo'] || d['Tipo De Activo '] || d['Tipo de Maquina'] || d['Tipo de Máquina'] || d['Tipo de Activo'] || d['Tipo de Activo '] || d['Activos'] || d['Categoria'] || d['Categoría'] || d['Tipo Urgencia'] || '';
+      const str = String(val).toUpperCase().trim();
+
+      // Mapeo explicito de Schop
+      if (str === 'COLUMNA' || str.includes('COLUMNA') || str.includes('ENFRIADOR SCHOP') || str.includes('BLADE') || str.includes('SCHOP')) {
+        return 'Schop';
+      }
+
+      // Mapeo explicito de Post Mix
+      if (str.includes('GRANIZADORA') || str.includes('MAQUINA DE HIELO') || str.includes('MÁQUINA DE HIELO') || str.includes('ENFRIADOR POSTMIX') || str.includes('ENFRIADOR POST MIX') || str.includes('POST') || str.includes('POSTMIX')) {
+        return 'Post Mix';
+      }
+
       return val || 'Post Mix';
     }
 
@@ -1056,6 +1068,9 @@
       } else if (currentSheetKey === "inspectivas") {
         const rawInspectiva = String(d['Motivo Rechazo'] || d['Causa No Factible'] || d['Observaciones'] || d['Motivo'] || '').trim();
         return rawInspectiva !== '' && rawInspectiva !== '0' ? rawInspectiva : 'Sin Información';
+      } else if (currentSheetKey === "ejecuciones") {
+        const rawEstado = String(d['Estado Solicitud'] || d['Estado'] || '').trim();
+        return rawEstado !== '' ? rawEstado : 'Solicitud Anulada';
       } else {
         const raw = (d['Motivo No Servicio'] || d['motivo_no_servicio'] || d['Motivo'] || '').trim();
         const strUpper = raw.toUpperCase();
@@ -1164,7 +1179,9 @@
           $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen de Motivos No Resueltos');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Resueltas)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle de Urgencias No Resueltas');
+          $('#col-motivos-no-realizados').show();
           $('#container-si-realizadas').hide();
+          $('#container-no-realizadas').show();
           $('#kpi-coord-card').hide();
           $('#bloque-inspectivas-rechazos').hide();
         } else if (currentSheetKey === "inspectivas") {
@@ -1177,7 +1194,9 @@
           $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen Causa No Factible / Observaciones');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Factibles)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle Puntos No Factibles');
+          $('#col-motivos-no-realizados').show();
           $('#container-si-realizadas').show();
+          $('#container-no-realizadas').show();
           $('#tabla-si-title').html('<i class="fa-solid fa-circle-check"></i> Detalle Puntos Factibles (SI)');
           $('#kpi-coord-card').show();
           $('#bloque-inspectivas-rechazos').show();
@@ -1185,14 +1204,14 @@
           $('#main-title').html('<i class="fa-solid fa-gears" style="font-size: 20px; color: #004b93;"></i> Dashboard Ejecuciones');
           $('#kpi-label-1').text('Total Ejecuciones');
           $('#kpi-label-2').text('Efectividad Global');
-          $('#kpi-label-3').text('No Ejecutadas');
+          $('#kpi-label-3').text('Solicitudes Anuladas');
           $('#kpi-subtext-legend').html('<span style="color:#006100; font-weight:bold;">● Schop</span> | <span style="color:#004b93; font-weight:bold;">● Post Mix</span>');
           $('#tabla-1-title').text('Resumen por Tipo de Activo');
-          $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen de Motivos No Ejecutados');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Ejecutadas)');
-          $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Detalle No Ejecutadas');
-          $('#container-si-realizadas').show();
-          $('#tabla-si-title').html('<i class="fa-solid fa-circle-check"></i> Detalle Ejecutadas (SI)');
+          $('#container-si-realizadas').show().css('width', '100%');
+          $('#container-no-realizadas').hide();
+          $('#col-motivos-no-realizados').hide();
+          $('#tabla-si-title').html('<i class="fa-solid fa-circle-check"></i> Detalle de Ejecuciones Cerradas (SI)');
           $('#kpi-coord-card').hide();
           $('#bloque-inspectivas-rechazos').hide();
         } else {
@@ -1205,7 +1224,9 @@
           $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen de Motivos No Realizados');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% SI)');
           $('#tabla-no-title').html('<i class="fa-solid fa-triangle-exclamation"></i> Justificación Visita No Realizada');
+          $('#col-motivos-no-realizados').show();
           $('#container-si-realizadas').show();
+          $('#container-no-realizadas').show();
           $('#tabla-si-title').html('<i class="fa-solid fa-circle-check"></i> Detalle de Servicios Realizados (SI)');
           $('#kpi-coord-card').hide();
           $('#bloque-inspectivas-rechazos').hide();
@@ -1503,9 +1524,11 @@
         document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Factibles (Aprobadas)`;
         document.getElementById('kpi-no-count').innerText = `${totalNO.toLocaleString()} No Factibles`;
         
-        // Renderizado del KPI de Días Promedio de Coordinación
         const promCoord = calcularPromedioCoordinacionDias(data);
         document.getElementById('kpi-coord-dias').innerText = `${promCoord} días`;
+      } else if (currentSheetKey === "ejecuciones") {
+        document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Ejecuciones Cerradas`;
+        document.getElementById('kpi-no-count').innerText = `${totalNO.toLocaleString()} Solicitudes Anuladas`;
       } else {
         document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Servicios Realizados`;
         document.getElementById('kpi-no-count').innerText = `${totalNO.toLocaleString()} Servicios Pendientes`;
@@ -1516,14 +1539,20 @@
       renderActivosChart(countSchop, countPostMix);
       renderTrendChart();
       renderTabla1(data);
-      renderTablaMotivos(data, totalNO, grandTotal);
+      
+      if (currentSheetKey !== "ejecuciones") {
+        renderTablaMotivos(data, totalNO, grandTotal);
+      }
       
       if (currentSheetKey === "inspectivas") {
         renderTablaRechazosTecnicos(data);
       }
 
       renderTabla2(data);
-      renderTablaNoRealizadas(data);
+      
+      if (currentSheetKey !== "ejecuciones") {
+        renderTablaNoRealizadas(data);
+      }
       
       if (currentSheetKey === "preventiva" || currentSheetKey === "inspectivas" || currentSheetKey === "ejecuciones") {
         renderTablaSiRealizadas(data);
@@ -1602,7 +1631,6 @@
         }
       });
 
-      // ORDENAMIENTO CRONOLÓGICO ESTRICTO DE LOS MESES
       let labels = Object.keys(monthlyStats).sort((a, b) => getMesIndex(a) - getMesIndex(b));
 
       if (labels.length > 13) {
@@ -1807,6 +1835,8 @@
     }
 
     function renderTablaMotivos(data, totalNO, grandTotal) {
+      if (currentSheetKey === "ejecuciones") return;
+
       const motivosStats = {};
       const noRealizadasData = data.filter(d => !isServicioRealizado(d));
 
@@ -1819,7 +1849,7 @@
 
       let ordenFilas = [];
 
-      if (currentSheetKey === "urgencias" || currentSheetKey === "inspectivas" || currentSheetKey === "ejecuciones") {
+      if (currentSheetKey === "urgencias" || currentSheetKey === "inspectivas") {
         ordenFilas = Object.keys(motivosStats).sort((a, b) => motivosStats[b] - motivosStats[a]);
       } else {
         ordenFilas = [
@@ -2138,6 +2168,8 @@
     }
 
     function renderTablaNoRealizadas(data) {
+      if (currentSheetKey === "ejecuciones") return;
+
       let noRealizadas = data.filter(d => !isServicioRealizado(d));
 
       if (noRealizadas.length === 0) {
@@ -2185,10 +2217,10 @@
         if ((fotoUrl1 && fotoUrl1.startsWith('http')) || (fotoUrl2 && fotoUrl2.startsWith('http'))) {
           fotosHtml = '<div class="photos-flex">';
           if (fotoUrl1 && fotoUrl1.startsWith('http')) {
-            fotosHtml += `<div class="img-container"><img src="${fotoUrl1}" class="thumb-img" alt="Imagen 1" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'"></div>`;
+            fotosHtml += `<div class="img-container"><img src="${fotoUrl1}" class="thumb-img" alt="Foto 1" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'"></div>`;
           }
           if (fotoUrl2 && fotoUrl2.startsWith('http')) {
-            fotosHtml += `<div class="img-container"><img src="${fotoUrl2}" class="thumb-img" alt="Imagen 2" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'"></div>`;
+            fotosHtml += `<div class="img-container"><img src="${fotoUrl2}" class="thumb-img" alt="Foto 2" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'"></div>`;
           }
           fotosHtml += '</div>';
         }
