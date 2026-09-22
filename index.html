@@ -991,22 +991,23 @@
       return isNaN(num) ? 1 : num;
     }
 
-    // VALIDACIÓN OFICIAL DE FACTIBILIDAD Y CUMPLIMIENTO EN CADA PESTAÑA
+    // VALIDACIÓN OFICIAL DE FACTIBILIDAD Y CUMPLIMIENTO EN CADA PESTAÑA (SOPORTA "Aprobada" DE COLUMNA W)
     function isServicioRealizado(d) {
       if (currentSheetKey === "urgencias") {
         const res = String(d['Pudo Resolver Problema'] || d['Pudo resolver problema'] || d['Resuelto'] || '').toUpperCase().trim();
         return res === "SI" || res === "1" || res === "RESUELTO";
       } else if (currentSheetKey === "inspectivas") {
         const res = String(d['Estado'] || d['Aprobado'] || d['Resultado'] || d['Factible'] || d['Realizada'] || '').toUpperCase().trim();
-        return res === "SI" || res === "1" || res === "APROBADO" || res === "FACTIBLE" || res === "REALIZADA";
+        return res === "SI" || res === "1" || res === "APROBADA" || res === "APROBADO" || res === "FACTIBLE" || res === "REALIZADA";
       } else {
         const realizada = String(d['Realizada'] || d['Realizada 2'] || d['Cumplimiento'] || '').toUpperCase().trim();
         return realizada === "SI" || realizada === "1" || realizada === "EJECUTADA" || realizada === "REALIZADA";
       }
     }
 
+    // VALIDACIÓN DE TIPO DE ACTIVO (SOPORTA VARIANTES "Postmix" Y "Post Mix")
     function getTipoActivo(d) {
-      const val = d['Tipo de Activo'] || d['Tipo de Activo '] || d['Activos'] || d['Categoria'] || d['Categoría'] || d['Tipo Urgencia'] || '';
+      const val = d['Tipo de Maquina'] || d['Tipo de Máquina'] || d['Tipo de Activo'] || d['Tipo de Activo '] || d['Activos'] || d['Categoria'] || d['Categoría'] || d['Tipo Urgencia'] || '';
       const str = String(val).toUpperCase();
       if (str.includes('SCHOP')) return 'Schop';
       if (str.includes('POST')) return 'Post Mix';
@@ -1388,7 +1389,7 @@
       };
 
       fillFilterUI('mes', getUniqueMesesCronologico());
-      fillFilterUI('usuario', getUnique(['Usuario', 'STCYG', 'usuario', 'Inspector', 'Inspector/a']));
+      fillFilterUI('usuario', getUnique(['Tecnico', 'Tecnico ', 'Técnico', 'Usuario', 'STCYG', 'usuario', 'Inspector', 'Inspector/a']));
       fillFilterUI('localId', getUniqueLocalAndCCU());
       fillFilterUI('cliente', getUnique(['Nombre Fantasía', 'Nombre Fantasía ', 'Nombre de Fantasia', 'Nombre Fantasia', 'Nombre Receptor', 'Cliente', 'cliente', 'Oficina']));
     }
@@ -1418,7 +1419,7 @@
       const fFin = fFinStr ? new Date(fFinStr) : null;
 
       return rawData.filter(d => {
-        const dUsuario = String(d['Usuario'] || d['usuario'] || d['Inspector'] || d['Inspector/a'] || '').trim();
+        const dUsuario = String(d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Usuario'] || d['usuario'] || d['Inspector'] || d['Inspector/a'] || '').trim();
         const dLocal = String(d['Local'] || '').trim();
         const dIdCCU = String(d['ID CCU'] || d['ID'] || d['Id CCU'] || d['ID Cliente (Escaneado)'] || d['ID Cliente (Manual)'] || '').trim();
         const dCliente = String(getNombreCliente(d)).trim();
@@ -1588,6 +1589,7 @@
         }
       });
 
+      // ORDENAMIENTO CRONOLÓGICO ESTRICTO DE LOS MESES
       let labels = Object.keys(monthlyStats).sort((a, b) => getMesIndex(a) - getMesIndex(b));
 
       if (labels.length > 13) {
@@ -1870,7 +1872,7 @@
       const statsTecnicos = {};
 
       data.forEach(d => {
-        const tec = d['Inspector'] || d['Inspector/a'] || d['Usuario'] || d['Técnico'] || d['Tecnico'] || 'Sin Asignar';
+        const tec = d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Inspector'] || d['Inspector/a'] || d['Usuario'] || 'Sin Asignar';
         const tipo = getTipoActivo(d);
         const aprobado = isServicioRealizado(d);
 
@@ -1890,7 +1892,6 @@
         }
       });
 
-      // Ordenar de mayor a menor número de rechazos
       const listaOrdenada = Object.keys(statsTecnicos).sort((a, b) => statsTecnicos[b].totalRechazos - statsTecnicos[a].totalRechazos);
 
       let html = `
@@ -1915,7 +1916,7 @@
       listaOrdenada.forEach(tec => {
         const item = statsTecnicos[tec];
         const tasaRechazo = item.total > 0 ? ((item.totalRechazos / item.total) * 100).toFixed(1) + '%' : '0.0%';
-        const esAltoRechazo = (item.totalRechazos / item.total) > 0.15; // Destacar en rojo si supera el 15%
+        const esAltoRechazo = (item.totalRechazos / item.total) > 0.15;
 
         sumTotalInspecciones += item.total;
         sumRechSchop += item.rechazosSchop;
@@ -1954,8 +1955,8 @@
       data.forEach(d => {
         const qty = getServiciosQty(d);
         const cat = getCategoriaTecnico(d);
-        const usr = d['Usuario'] || d['usuario'] || d['Inspector'] || d['Inspector/a'] || 'Sin Usuario';
-        const tec = d['Técnico'] || d['Tecnico'] || d['Jefe de Ventas'] || d['Inspector'] || d['Inspector/a'] || 'Sin Técnico';
+        const usr = d['Usuario'] || d['usuario'] || d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Inspector'] || d['Inspector/a'] || 'Sin Usuario';
+        const tec = d['Técnico'] || d['Tecnico'] || d['Tecnico '] || d['Jefe de Ventas'] || d['Inspector'] || d['Inspector/a'] || 'Sin Técnico';
 
         if(!t2Stats[cat]) t2Stats[cat] = {};
         if(!t2Stats[cat][usr]) t2Stats[cat][usr] = { tecnico: tec, SI: 0, NO: 0 };
@@ -2156,7 +2157,7 @@
           <tbody>`;
 
       noRealizadas.forEach(d => {
-        const tec = d['Usuario'] || d['Técnico'] || d['Tecnico'] || d['Inspector'] || d['Inspector/a'] || '-';
+        const tec = d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Usuario'] || d['Inspector'] || d['Inspector/a'] || '-';
         const rawFecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
         const fechaFormateada = formatDiaMes(rawFecha);
         const cliente = getNombreCliente(d);
@@ -2228,7 +2229,7 @@
           <tbody>`;
 
       siRealizadas.forEach(d => {
-        const tec = d['Usuario'] || d['Técnico'] || d['Tecnico'] || d['Inspector'] || d['Inspector/a'] || '-';
+        const tec = d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Usuario'] || d['Inspector'] || d['Inspector/a'] || '-';
         const rawFecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
         const fechaFormateada = formatDiaMes(rawFecha);
         const idCCU = getIdCCU(d);
