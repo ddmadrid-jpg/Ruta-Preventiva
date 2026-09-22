@@ -893,7 +893,7 @@
     <div class="grid-row-full" id="bloque-inspectivas-rechazos" style="display: none;">
       <div class="table-container">
         <div class="table-header" style="background-color: #ffebee; color: #c62828;">
-          <span><i class="fa-solid fa-user-xmark"></i> Ranking de Rechazos / No Factibles por Técnico y Categoría (Schop vs Post Mix)</span>
+          <span><i class="fa-solid fa-user-xmark"></i> Ranking de Rechazos / No Factibles por Cód. Técnico y Categoría (Schop vs Post Mix)</span>
         </div>
         <div id="tabla-rechazos-tecnicos-container"></div>
       </div>
@@ -1008,7 +1008,7 @@
       }
     }
 
-    // VALIDACIÓN DE TIPO DE ACTIVO (MAPPING EXPLICITO SOLICITADO PARA EJECUCIONES Y DEMÁS PESTAÑAS)
+    // VALIDACIÓN DE TIPO DE ACTIVO (MAPPING EXPLICITO SOLICITADO)
     function getTipoActivo(d) {
       const val = d['Tipo De Activo'] || d['Tipo De Activo '] || d['Tipo de Maquina'] || d['Tipo de Máquina'] || d['Tipo de Activo'] || d['Tipo de Activo '] || d['Activos'] || d['Categoria'] || d['Categoría'] || d['Tipo Urgencia'] || '';
       const str = String(val).toUpperCase().trim();
@@ -1036,7 +1036,11 @@
       }
     }
 
+    // LECTURA DE CLIENTE (COLUMNA D "Razon Social" EN INSPECTIVAS)
     function getNombreCliente(d) {
+      if (currentSheetKey === "inspectivas") {
+        return d['Razon Social'] || d['Razón Social'] || d['Razon_Social'] || d['Nombre Fantasía'] || d['Cliente'] || '-';
+      }
       return d['Nombre Fantasía'] || d['Nombre Fantasía '] || d['Nombre de Fantasia'] || d['Nombre Fantasia'] || d['Cliente'] || d['Nombre Receptor'] || d['Oficina'] || '-';
     }
 
@@ -1427,7 +1431,7 @@
       fillFilterUI('mes', getUniqueMesesCronologico());
       fillFilterUI('usuario', getUnique(['Cod Tecnico', 'Cod Técnico', 'Tecnico', 'Tecnico ', 'Técnico', 'Usuario', 'STCYG', 'usuario', 'Inspector', 'Inspector/a']));
       fillFilterUI('localId', getUniqueLocalAndCCU());
-      fillFilterUI('cliente', getUnique(['Nombre Fantasía', 'Nombre Fantasía ', 'Nombre de Fantasia', 'Nombre Fantasia', 'Nombre Receptor', 'Cliente', 'cliente', 'Oficina', 'Persona que Re']));
+      fillFilterUI('cliente', getUnique(['Razon Social', 'Razón Social', 'Nombre Fantasía', 'Nombre Fantasía ', 'Nombre de Fantasia', 'Nombre Fantasia', 'Nombre Receptor', 'Cliente', 'cliente', 'Oficina', 'Persona que Re']));
     }
 
     function setMesActualDefault() {
@@ -1972,14 +1976,14 @@
       document.getElementById('tabla-motivos-container').innerHTML = html;
     }
 
-    /* TABLA ANALÍTICA: RANKING DE RECHAZOS POR TÉCNICO Y CATEGORÍA (VISITAS INSPECTIVAS) */
+    /* TABLA ANALÍTICA: RANKING DE RECHAZOS POR CÓDIGO DE TÉCNICO Y CATEGORÍA (VISITAS INSPECTIVAS) */
     function renderTablaRechazosTecnicos(data) {
       if (currentSheetKey !== "inspectivas") return;
 
       const statsTecnicos = {};
 
       data.forEach(d => {
-        const tec = d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Inspector'] || d['Inspector/a'] || d['Usuario'] || 'Sin Asignar';
+        const tec = d['Cod Tecnico'] || d['Cod Técnico'] || d['Cod_Tecnico'] || d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Inspector'] || d['Inspector/a'] || d['Usuario'] || 'Sin Asignar';
         const tipo = getTipoActivo(d);
         const aprobado = isServicioRealizado(d);
 
@@ -2005,7 +2009,7 @@
         <table>
           <thead>
             <tr>
-              <th class="left">Técnico / Inspector</th>
+              <th class="left">Cód. Técnico / Inspector</th>
               <th>Total Inspecciones</th>
               <th>Rechazos Schop</th>
               <th>Rechazos Post Mix</th>
@@ -2061,7 +2065,6 @@
       // TABLA RESUMEN POR CÓDIGO DE TÉCNICO Y SOLICITUDES ÚNICAS EXCLUSIVA PARA EJECUCIONES
       if (currentSheetKey === "ejecuciones") {
         const tecSolMap = {};
-        const solicitudesProcesadas = new Set();
 
         data.forEach(d => {
           const tec = String(d['Cod Tecnico'] || d['Cod Técnico'] || d['Tecnico'] || d['Usuario'] || 'Sin Asignar').trim();
@@ -2081,7 +2084,6 @@
           }
         });
 
-        // Ordenar técnicos por mayor cantidad de solicitudes cerradas
         const listaTecnicos = Object.keys(tecSolMap).sort((a, b) => tecSolMap[b].cerradas.size - tecSolMap[a].cerradas.size);
 
         let htmlEjec = `
@@ -2333,16 +2335,18 @@
         return dateB - dateA;
       });
 
+      const esInspectivas = currentSheetKey === "inspectivas";
+
       let html = `
         <table>
           <thead>
             <tr>
-              <th class="left">Técnico / Inspector</th>
+              <th class="left">Cód. Técnico / Inspector</th>
               <th class="left">Fecha</th>
-              <th class="left">Cliente</th>
+              <th class="left">${esInspectivas ? 'Cliente (Razón Social)' : 'Cliente'}</th>
               <th class="left">Motivo / Resuelto</th>
               <th class="left">Comentario No Resuelto</th>
-              <th style="text-align:center;">Fotos</th>
+              ${!esInspectivas ? '<th style="text-align:center;">Fotos</th>' : ''}
             </tr>
           </thead>
           <tbody>`;
@@ -2378,7 +2382,7 @@
             <td class="left">${cliente}</td>
             <td class="left" style="color: #c62828; font-weight: 500;">${motivo}</td>
             <td class="left" style="font-size: 11px; color: #555;">${comentario}</td>
-            <td style="text-align:center;">${fotosHtml}</td>
+            ${!esInspectivas ? `<td style="text-align:center;">${fotosHtml}</td>` : ''}
           </tr>`;
       });
 
@@ -2386,7 +2390,7 @@
       document.getElementById('tabla-no-realizadas-container').innerHTML = html;
     }
 
-    /* RENDER EXCLUSIVO TABLA DE REALIZADOS (DEDUPLICA N° SOLICITUD EN EJECUCIONES) */
+    /* RENDER EXCLUSIVO TABLA DE REALIZADOS */
     function renderTablaSiRealizadas(data) {
       let siRealizadas = data.filter(d => isServicioRealizado(d));
 
@@ -2402,7 +2406,7 @@
           const numSol = String(d['Número'] || d['Número '] || d['Numero'] || d['Número de Solicitud'] || '').trim();
           if (!numSol || numSol === '-') return true;
           if (solicitudesVistas.has(numSol)) {
-            return false; // Descarta filas duplicadas de una misma solicitud
+            return false;
           }
           solicitudesVistas.add(numSol);
           return true;
@@ -2420,18 +2424,19 @@
       });
 
       const esEjecuciones = currentSheetKey === "ejecuciones";
+      const esInspectivas = currentSheetKey === "inspectivas";
 
       let html = `
         <table>
           <thead>
             <tr>
               ${esEjecuciones ? '<th class="left">N° Solicitud</th>' : ''}
-              <th class="left">${esEjecuciones ? 'Cód. Técnico' : 'Técnico / Inspector'}</th>
+              <th class="left">${esEjecuciones ? 'Cód. Técnico' : 'Cód. Técnico / Inspector'}</th>
               <th class="left">Fecha</th>
               <th class="left">${esEjecuciones ? 'Proceso' : 'ID CCU'}</th>
-              <th class="left">${esEjecuciones ? 'Receptor (Persona que Re)' : 'Cliente (Nombre Fantasía)'}</th>
+              <th class="left">${esEjecuciones ? 'Receptor (Persona que Re)' : (esInspectivas ? 'Cliente (Razón Social)' : 'Cliente (Nombre Fantasía)')}</th>
               <th class="left">${esEjecuciones ? 'Comentario / Proceso' : 'Nombre Receptor'}</th>
-              <th style="text-align:center;">${esEjecuciones ? 'Imágenes (1 y 2)' : 'Foto Columnas / Post Mix'}</th>
+              ${!esInspectivas ? `<th style="text-align:center;">${esEjecuciones ? 'Imágenes (1 y 2)' : 'Foto Columnas / Post Mix'}</th>` : ''}
             </tr>
           </thead>
           <tbody>`;
@@ -2468,7 +2473,7 @@
             <td class="left" style="font-weight: 500;">${idCCU}</td>
             <td class="left">${cliente}</td>
             <td class="left" style="font-weight: 500;">${receptor}</td>
-            <td style="text-align:center;">${fotoHtml}</td>
+            ${!esInspectivas ? `<td style="text-align:center;">${fotoHtml}</td>` : ''}
           </tr>`;
       });
 
