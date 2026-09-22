@@ -146,6 +146,12 @@
       gap: 16px;
     }
 
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
     .header-title h1 {
       margin: 0;
       color: var(--excel-green-dark);
@@ -179,6 +185,25 @@
       display: flex;
       align-items: center;
       gap: 6px;
+    }
+
+    .export-btn {
+      background: var(--excel-green-header);
+      color: #ffffff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s ease;
+    }
+
+    .export-btn:hover {
+      background: var(--excel-green-dark);
     }
 
     /* Navegación por Pestañas */
@@ -295,14 +320,14 @@
       display: flex;
       flex-wrap: wrap;
       gap: 16px;
-      align-items: flex-start;
+      align-items: flex-end;
     }
 
     .filter-group {
       display: flex;
       flex-direction: column;
       gap: 6px;
-      min-width: 160px;
+      min-width: 150px;
       flex: 1;
       position: relative;
     }
@@ -486,6 +511,28 @@
       color: #fff;
     }
 
+    .btn-reset-filters {
+      height: 38px;
+      background: #f8f9fa;
+      border: 1px solid #dcdfe6;
+      color: #555;
+      padding: 0 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-reset-filters:hover {
+      background: #e9ecef;
+      color: #d32f2f;
+      border-color: #d32f2f;
+    }
+
     /* Layout principal */
     .dashboard-grid {
       display: flex;
@@ -624,6 +671,36 @@
       position: relative;
     }
 
+    .pagination-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+      background: #f8f9fa;
+      border-top: 1px solid #eef0f2;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .pagination-controls {
+      display: flex;
+      gap: 6px;
+    }
+
+    .page-btn {
+      padding: 4px 10px;
+      border: 1px solid #ccc;
+      background: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .page-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .no-data {
       padding: 20px;
       text-align: center;
@@ -696,8 +773,13 @@
         <i class="fa-regular fa-clock"></i> Esta información se actualiza todos los martes a medio día.
       </div>
     </div>
-    <div class="status-badge" id="status-box">
-      <i class="fa-solid fa-spinner fa-spin"></i> Cargando datos...
+    <div class="header-right">
+      <button class="export-btn" id="btn-exportar-csv">
+        <i class="fa-solid fa-file-excel"></i> Exportar CSV
+      </button>
+      <div class="status-badge" id="status-box">
+        <i class="fa-solid fa-spinner fa-spin"></i> Cargando datos...
+      </div>
     </div>
   </div>
 
@@ -745,7 +827,7 @@
       <div class="kpi-subtext" id="kpi-no-count" style="color: #888;">0 Pendientes</div>
     </div>
 
-    <!-- KPI Especial: Tiempo Promedio de Coordinación (Columna O) -->
+    <!-- KPI Especial: Tiempo Promedio de Coordinación -->
     <div class="kpi-card" id="kpi-coord-card" style="border-left-color: #f39c12; display: none;">
       <div class="kpi-title">Tiempo Prom. Coordinación</div>
       <div class="kpi-value" id="kpi-coord-dias">0.0 días</div>
@@ -863,12 +945,16 @@
         </div>
       </div>
     </div>
+
+    <button class="btn-reset-filters" id="btn-reset-all">
+      <i class="fa-solid fa-rotate-left"></i> Limpiar Filtros
+    </button>
   </div>
 
-  <!-- Grid Principal Reestructurado -->
+  <!-- Grid Principal -->
   <div class="dashboard-grid">
     
-    <!-- FILA 1: Resumen Tipo Activo (Izquierda) + Resumen Motivos No Realizados (Derecha) -->
+    <!-- FILA 1: Resumen Tipo Activo + Resumen Motivos -->
     <div class="grid-row-two-col">
       <div class="grid-col-half" id="col-resumen-activo">
         <div class="table-container">
@@ -889,17 +975,17 @@
       </div>
     </div>
 
-    <!-- BLOQUE ANALÍTICO EXCLUSIVO PARA VISITAS INSPECTIVAS -->
+    <!-- BLOQUE ANALÍTICO INSPECTIVAS -->
     <div class="grid-row-full" id="bloque-inspectivas-rechazos" style="display: none;">
       <div class="table-container">
         <div class="table-header" style="background-color: #ffebee; color: #c62828;">
-          <span><i class="fa-solid fa-user-xmark"></i> Ranking de Rechazos / No Factibles por Cód. Técnico y Categoría (Schop vs Post Mix)</span>
+          <span><i class="fa-solid fa-user-xmark"></i> Ranking de Rechazos / No Factibles por Cód. Técnico y Categoría</span>
         </div>
         <div id="tabla-rechazos-tecnicos-container"></div>
       </div>
     </div>
 
-    <!-- FILA 2: Detalle Servicios Realizados (Izquierda) + Justificación Visita No Realizada (Derecha) -->
+    <!-- FILA 2: Detalle Servicios Realizados + Justificación No Realizada -->
     <div class="grid-row-two-col">
       <div class="grid-col-half" id="container-si-realizadas">
         <div class="table-container">
@@ -907,6 +993,7 @@
             <span id="tabla-si-title"><i class="fa-solid fa-circle-check"></i> Detalle de Servicios Realizados (SI)</span>
           </div>
           <div class="scrollable-table" id="tabla-si-realizadas-container"></div>
+          <div class="pagination-bar" id="page-bar-si"></div>
         </div>
       </div>
 
@@ -916,11 +1003,12 @@
             <span id="tabla-no-title"><i class="fa-solid fa-triangle-exclamation"></i> Justificación Visita No Realizada</span>
           </div>
           <div class="scrollable-table" id="tabla-no-realizadas-container"></div>
+          <div class="pagination-bar" id="page-bar-no"></div>
         </div>
       </div>
     </div>
 
-    <!-- FILA 3 (ABAJO DEL TODO): Desglose por Categoría y Técnico / Ranking de Solicitudes Únicas en Ejecuciones -->
+    <!-- FILA 3: Desglose por Categoría y Técnico -->
     <div class="grid-row-full">
       <div class="table-container">
         <div class="table-header">
@@ -933,7 +1021,6 @@
   </div>
 
   <script>
-    // URLs de los Libros de Google Sheets
     const SHEETS_URLS = {
       preventiva: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHJUM26MwbPurx5FdJGQc-I-vlfwyEZYbPGeYE0F5HxEWpbMyhVeJpJKK7XjCD6No8RZCfeHgWaxZZ/pub?output=csv",
       urgencias: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTNzXfjkM4mtZrHyPjzSVqjYOTG0tVFReUG3FPpR-nkyCud1hoR8rRPpqPToiz82Vmp0A5ubJqz3zx/pub?output=csv",
@@ -946,6 +1033,11 @@
     let activosChartInstance = null;
     let trendChartInstance = null;
 
+    // Estado Paginación
+    let pageSI = 1;
+    let pageNO = 1;
+    const PAGE_SIZE = 20;
+
     Chart.register(ChartDataLabels);
 
     const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -957,15 +1049,57 @@
       cliente: { selected: [], searchText: "" }
     };
 
-    function showLoader() {
-      $('#loader-overlay').css('display', 'flex').css('opacity', '1');
-    }
-
+    function showLoader() { $('#loader-overlay').css('display', 'flex').css('opacity', '1'); }
     function hideLoader() {
       $('#loader-overlay').css('opacity', '0');
-      setTimeout(() => {
-        $('#loader-overlay').css('display', 'none');
-      }, 300);
+      setTimeout(() => $('#loader-overlay').css('display', 'none'), 300);
+    }
+
+    // Sanitización HTML
+    function escapeHTML(str) {
+      if (!str || str === '-') return '-';
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // Normalización de Claves del CSV
+    function normalizeRowKeys(row) {
+      const normalized = {};
+      Object.keys(row).forEach(key => {
+        const cleanKey = key.trim()
+          .toLowerCase()
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]/g, "");
+        normalized[cleanKey] = row[key];
+      });
+
+      return {
+        _raw: row,
+        servicios: normalized.servicios || normalized.cant || normalized.cantidad || '1',
+        pudoResolver: normalized.pudoresolverproblema || normalized.resuelto || '',
+        estado: normalized.estado || normalized.aprobado || normalized.resultado || normalized.factible || normalized.realizada || '',
+        estadoSolicitud: normalized.estadosolicitud || normalized.estado || '',
+        realizada: normalized.realizada || normalized.realizada2 || normalized.cumplimiento || '',
+        tipoActivo: normalized.tipodeactivo || normalized.tipodemaquina || normalized.activos || normalized.categoria || normalized.tipourgencia || '',
+        usuario: normalized.codtecnico || normalized.tecnico || normalized.usuario || normalized.inspector || normalized.stcyg || '',
+        tecnicoNombre: normalized.tecnico || normalized.inspector || normalized.jefedeventas || normalized.codtecnico || '',
+        cliente: normalized.razonsocial || normalized.nombrefantasia || normalized.cliente || normalized.nombrereceptor || normalized.oficina || '-',
+        idCCU: normalized.idccu || normalized.id || normalized.idcliente || normalized.idclientemanual || normalized.idclienteescaneado || '-',
+        local: normalized.local || '',
+        receptor: normalized.personaquere || normalized.nombrereceptor || normalized.receptor || '-',
+        comentario: normalized.comentariosnoresuelto || normalized.comentario || normalized.comentariomotivo || normalized.observaciones || '-',
+        foto1: normalized.imagen1 || normalized.fotoequipo || normalized.fotomotivo || normalized.fotocolumnasopostmix || '',
+        foto2: normalized.imagen2 || normalized.fotoequipo2 || normalized.fotosalidafne || '',
+        motivoNoServicio: normalized.motivonoservicio || normalized.motivorechazo || normalized.causanofactible || normalized.observaciones || normalized.motivo || '',
+        diasCoord: normalized.qdiascoordcreacion || normalized.diascoordinacion || null,
+        fecha: normalized.fecha || normalized.fechahoraejecucion1 || normalized.fechaprogramada2 || normalized.fecharealizado || normalized.fechahora || '',
+        mes: normalized.mes || '',
+        numeroSolicitud: normalized.numero || normalized.numerodesolicitud || normalized.proceso || '-'
+      };
     }
 
     function resetFiltersState() {
@@ -985,171 +1119,84 @@
     }
 
     function getServiciosQty(d) {
-      if (currentSheetKey === "urgencias" || currentSheetKey === "inspectivas" || currentSheetKey === "ejecuciones") return 1;
-      const val = d['Servicios'] || d['servicios'] || d['SERVICIOS'] || d['Cant'] || d['Cantidad'];
-      const num = parseInt(val, 10);
+      if (currentSheetKey !== "preventiva") return 1;
+      const num = parseInt(d.servicios, 10);
       return isNaN(num) ? 1 : num;
     }
 
-    // VALIDACIÓN OFICIAL DE FACTIBILIDAD, CERRADO Y CUMPLIMIENTO EN CADA PESTAÑA
     function isServicioRealizado(d) {
       if (currentSheetKey === "urgencias") {
-        const res = String(d['Pudo Resolver Problema'] || d['Pudo resolver problema'] || d['Resuelto'] || '').toUpperCase().trim();
+        const res = String(d.pudoResolver).toUpperCase().trim();
         return res === "SI" || res === "1" || res === "RESUELTO";
       } else if (currentSheetKey === "inspectivas") {
-        const res = String(d['Estado'] || d['Aprobado'] || d['Resultado'] || d['Factible'] || d['Realizada'] || '').toUpperCase().trim();
-        return res === "SI" || res === "1" || res === "APROBADA" || res === "APROBADO" || res === "FACTIBLE" || res === "REALIZADA";
+        const res = String(d.estado).toUpperCase().trim();
+        return ["SI", "1", "APROBADA", "APROBADO", "FACTIBLE", "REALIZADA"].includes(res);
       } else if (currentSheetKey === "ejecuciones") {
-        const estadoSolicitud = String(d['Estado Solicitud'] || d['Estado'] || '').toUpperCase().trim();
-        return estadoSolicitud.includes("CERRADA") || estadoSolicitud === "CERRADO" || estadoSolicitud === "SI";
+        const st = String(d.estadoSolicitud).toUpperCase().trim();
+        return st.includes("CERRADA") || st === "CERRADO" || st === "SI";
       } else {
-        const realizada = String(d['Realizada'] || d['Realizada 2'] || d['Cumplimiento'] || '').toUpperCase().trim();
-        return realizada === "SI" || realizada === "1" || realizada === "EJECUTADA" || realizada === "REALIZADA";
+        const r = String(d.realizada).toUpperCase().trim();
+        return ["SI", "1", "EJECUTADA", "REALIZADA"].includes(r);
       }
     }
 
-    // VALIDACIÓN DE TIPO DE ACTIVO (MAPPING EXPLICITO SOLICITADO)
     function getTipoActivo(d) {
-      const val = d['Tipo De Activo'] || d['Tipo De Activo '] || d['Tipo de Maquina'] || d['Tipo de Máquina'] || d['Tipo de Activo'] || d['Tipo de Activo '] || d['Activos'] || d['Categoria'] || d['Categoría'] || d['Tipo Urgencia'] || '';
-      const str = String(val).toUpperCase().trim();
-
-      if (str === 'COLUMNA' || str.includes('COLUMNA') || str.includes('ENFRIADOR SCHOP') || str.includes('BLADE') || str.includes('SCHOP')) {
-        return 'Schop';
-      }
-
-      if (str.includes('GRANIZADORA') || str.includes('MAQUINA DE HIELO') || str.includes('MÁQUINA DE HIELO') || str.includes('ENFRIADOR POSTMIX') || str.includes('ENFRIADOR POST MIX') || str.includes('POST') || str.includes('POSTMIX')) {
-        return 'Post Mix';
-      }
-
-      return val || 'Post Mix';
+      const str = String(d.tipoActivo).toUpperCase().trim();
+      if (str.includes('COLUMNA') || str.includes('ENFRIADOR SCHOP') || str.includes('BLADE') || str.includes('SCHOP')) return 'Schop';
+      if (str.includes('GRANIZADORA') || str.includes('HIELO') || str.includes('POST')) return 'Post Mix';
+      return d.tipoActivo || 'Post Mix';
     }
 
     function getCategoriaTecnico(d) {
       if (currentSheetKey === "urgencias") {
-        const usr = String(d['Usuario'] || d['usuario'] || '').toUpperCase().trim();
-        if (usr === "STCYG11" || usr === "STCYG12" || usr === "STCYG13") {
-          return "Camionetas";
-        }
-        return "Ruta";
-      } else {
-        return getTipoActivo(d);
+        const usr = String(d.usuario).toUpperCase().trim();
+        return ["STCYG11", "STCYG12", "STCYG13"].includes(usr) ? "Camionetas" : "Ruta";
       }
-    }
-
-    // LECTURA DE CLIENTE (COLUMNA D "Razon Social" EN INSPECTIVAS)
-    function getNombreCliente(d) {
-      if (currentSheetKey === "inspectivas") {
-        return d['Razon Social'] || d['Razón Social'] || d['Razon_Social'] || d['Nombre Fantasía'] || d['Cliente'] || '-';
-      }
-      return d['Nombre Fantasía'] || d['Nombre Fantasía '] || d['Nombre de Fantasia'] || d['Nombre Fantasia'] || d['Cliente'] || d['Nombre Receptor'] || d['Oficina'] || '-';
-    }
-
-    function getIdCCU(d) {
-      return d['ID CCU'] || d['ID'] || d['Id CCU'] || d['ID Cliente (Manual)'] || d['ID Cliente (Escaneado)'] || d['id_ccu'] || '-';
-    }
-
-    function getNombreReceptor(d) {
-      if (currentSheetKey === "ejecuciones") {
-        return d['Persona que Re'] || d['Nombre Receptor'] || d['Receptor'] || '-';
-      }
-      return d['Nombre Receptor'] || d['Nombre Receptor Local'] || d['Receptor'] || '-';
-    }
-
-    function getComentarioCliente(d) {
-      return d['Comentario'] || d['Comentario Motivo'] || d['Comentario Producto dete'] || d['Observaciones'] || '-';
-    }
-
-    function getFotoEquipoColumna(d) {
-      return d['Foto Columnas o Post Mix'] || d['Foto Equipo'] || d['Foto Motivo'] || d['Foto Salida FNE'] || '';
+      return getTipoActivo(d);
     }
 
     function getMotivoNoServicio(d) {
-      if (currentSheetKey === "urgencias") {
-        const rawResuelto = String(d['Resuelto'] || d['Comentario No Resuelto'] || '').trim();
-        return rawResuelto !== '' && rawResuelto !== '0' ? rawResuelto : 'Sin Información';
-      } else if (currentSheetKey === "inspectivas") {
-        const rawInspectiva = String(d['Motivo Rechazo'] || d['Causa No Factible'] || d['Observaciones'] || d['Motivo'] || '').trim();
-        return rawInspectiva !== '' && rawInspectiva !== '0' ? rawInspectiva : 'Sin Información';
-      } else if (currentSheetKey === "ejecuciones") {
-        const rawEstado = String(d['Estado Solicitud'] || d['Estado'] || '').trim();
-        return rawEstado !== '' ? rawEstado : 'Solicitud Anulada';
-      } else {
-        const raw = (d['Motivo No Servicio'] || d['motivo_no_servicio'] || d['Motivo'] || '').trim();
-        const strUpper = raw.toUpperCase();
+      const raw = String(d.motivoNoServicio).trim();
+      const strUpper = raw.toUpperCase();
 
-        if (!raw || strUpper === 'SIN ESPECIFICAR' || strUpper === 'SIN INFORMACIÓN' || strUpper === 'SIN INFORMACION' || strUpper === '-') {
-          return 'Sin Información';
-        }
-
-        if (strUpper.includes('LOCAL CERRADO')) return 'Local Cerrado';
-        if (strUpper.includes('CLIENTE NO PERMITE')) return 'Cliente no permite';
-        if (strUpper.includes('DESPROGRAMAR CLIENTE')) return 'Desprogramar Cliente';
-        if (strUpper.includes('OTRO')) return 'Otro';
-
-        return raw;
+      if (!raw || ['SIN ESPECIFICAR', 'SIN INFORMACIÓN', 'SIN INFORMACION', '-'].includes(strUpper)) {
+        return 'Sin Información';
       }
+      if (strUpper.includes('LOCAL CERRADO')) return 'Local Cerrado';
+      if (strUpper.includes('CLIENTE NO PERMITE')) return 'Cliente no permite';
+      if (strUpper.includes('DESPROGRAMAR CLIENTE')) return 'Desprogramar Cliente';
+      if (strUpper.includes('OTRO')) return 'Otro';
+
+      return raw;
     }
 
-    // CÁLCULO DE TIEMPO PROMEDIO DE COORDINACIÓN EN DÍAS (COLUMNA O)
-    function calcularPromedioCoordinacionDias(data) {
-      if (currentSheetKey !== "inspectivas") return 0;
-      let sumaDias = 0;
-      let contador = 0;
-
-      data.forEach(d => {
-        const valO = d['Qdias coord / creación'] || d['Qdias coord/ creacion'] || d['Dias Coordinacion'] || d['Días Coordinación'];
-        if (valO !== undefined && valO !== null && valO !== '') {
-          const num = parseFloat(String(valO).replace(',', '.'));
-          if (!isNaN(num) && num >= 0) {
-            sumaDias += num;
-            contador++;
-          }
-        }
-      });
-
-      return contador > 0 ? (sumaDias / contador).toFixed(1) : '0.0';
-    }
-
-    // PARSEADOR DE FECHA UNIVERSAL (SOPORTA SERIALES DE EXCEL EJ: 46276)
     function parseDate(dateStr) {
       if (!dateStr) return null;
       const str = String(dateStr).trim();
-
       if (/^\d{5}$/.test(str)) {
-        const serial = parseInt(str, 10);
-        const excelEpoch = new Date(1899, 11, 30);
-        return new Date(excelEpoch.getTime() + serial * 86400000);
+        return new Date(new Date(1899, 11, 30).getTime() + parseInt(str, 10) * 86400000);
       }
-
       const cleaned = str.split(' ')[0].replace(/\//g, '-');
       const parts = cleaned.split('-');
       if (parts.length === 3) {
         if (parts[0].length === 4) return new Date(parts[0], parts[1] - 1, parts[2]);
         if (parts[2].length === 4) return new Date(parts[2], parts[1] - 1, parts[0]);
       }
-
-      const timestamp = Date.parse(str);
-      if (!isNaN(timestamp)) {
-        return new Date(timestamp);
-      }
-
-      return null;
+      const ts = Date.parse(str);
+      return isNaN(ts) ? null : new Date(ts);
     }
 
-    // FORMATEADOR DE FECHA VISUAL LEGIBLE
     function formatDiaMes(dateStr) {
       if (!dateStr || dateStr === '-') return '-';
       const parsed = parseDate(dateStr);
       if (parsed && !isNaN(parsed.getTime())) {
         const dia = String(parsed.getDate()).padStart(2, '0');
         const mes = String(parsed.getMonth() + 1).padStart(2, '0');
-        const anio = parsed.getFullYear();
-        return `${dia}/${mes}/${anio}`;
+        return `${dia}/${mes}/${parsed.getFullYear()}`;
       }
-      return dateStr;
+      return escapeHTML(dateStr);
     }
 
-    // OBTENER ÍNDICE CRONOLÓGICO DEL MES PARA ORDENAMIENTO ESTRICTO
     function getMesIndex(nombreMes) {
       if (!nombreMes) return 99;
       const str = String(nombreMes).trim().toLowerCase();
@@ -1162,21 +1209,18 @@
       flatpickr("#filter-fecha-inicio", { dateFormat: "Y-m-d", onChange: renderDashboard });
       flatpickr("#filter-fecha-fin", { dateFormat: "Y-m-d", onChange: renderDashboard });
 
-      // Cambio de Pestañas
       $('.tab-btn').on('click', function() {
-        const targetSheet = $(this).data('sheet');
+        $('.tab-btn').removeClass('active');$(this).addClass('active');
 
-        $('.tab-btn').removeClass('active');
-        $(this).addClass('active');
-
-        currentSheetKey = targetSheet;
+        currentSheetKey = $(this).data('sheet');
+        pageSI = 1;
+        pageNO = 1;
 
         if (currentSheetKey === "urgencias") {
           $('#main-title').html('<i class="fa-solid fa-truck-medical" style="font-size: 20px; color: #d32f2f;"></i> Dashboard Urgencias Atendidas');
           $('#kpi-label-1').text('Total Urgencias');
           $('#kpi-label-2').text('Resolutividad Global');
           $('#kpi-label-3').text('Casos No Resueltos');
-          $('#kpi-subtext-legend').html('<span style="color:#006100; font-weight:bold;">● Schop</span> | <span style="color:#004b93; font-weight:bold;">● Post Mix</span>');
           $('#tabla-1-title').text('Resumen por Tipo de Activo');
           $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen de Motivos No Resueltos');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Resueltas)');
@@ -1192,7 +1236,6 @@
           $('#kpi-label-1').text('Total Inspecciones');
           $('#kpi-label-2').text('Tasa de Factibilidad');
           $('#kpi-label-3').text('Puntos No Factibles');
-          $('#kpi-subtext-legend').html('<span style="color:#006100; font-weight:bold;">● Schop</span> | <span style="color:#004b93; font-weight:bold;">● Post Mix</span>');
           $('#tabla-1-title').text('Resumen por Tipo de Activo');
           $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen Causa No Factible / Observaciones');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Factibles)');
@@ -1209,7 +1252,6 @@
           $('#kpi-label-1').text('Total Solicitudes');
           $('#kpi-label-2').text('Efectividad Global');
           $('#kpi-label-3').text('Solicitudes Anuladas');
-          $('#kpi-subtext-legend').html('<span style="color:#006100; font-weight:bold;">● Schop</span> | <span style="color:#004b93; font-weight:bold;">● Post Mix</span>');
           $('#tabla-1-title').text('Resumen por Tipo de Activo');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% Ejecutadas)');
           $('#tabla-2-title').text('Ranking de Solicitudes Únicas por Código de Técnico');
@@ -1224,7 +1266,6 @@
           $('#kpi-label-1').text('Total Servicios');
           $('#kpi-label-2').text('Cumplimiento Global');
           $('#kpi-label-3').text('Visitas No Realizadas');
-          $('#kpi-subtext-legend').html('<span style="color:#006100; font-weight:bold;">● Schop</span> | <span style="color:#004b93; font-weight:bold;">● Post Mix</span>');
           $('#tabla-1-title').text('Resumen por Tipo de Activo');
           $('#tabla-motivos-title').html('<i class="fa-solid fa-list-check"></i> Resumen de Motivos No Realizados');
           $('#trend-card-title').html('<i class="fa-solid fa-chart-column"></i> Evolución Mensual (% SI)');
@@ -1242,138 +1283,109 @@
         loadSheetData();
       });
 
-      // Pop-up Filtros
+      // Eventos Filtros
       $('.gs-filter-box').on('click', function(e) {
         e.stopPropagation();
-        const $group = $(this).closest('.filter-group');
-        const $dropdown = $group.find('.gs-dropdown');
-        $('.gs-dropdown').not($dropdown).removeClass('show');
-        $dropdown.toggleClass('show');
+        const $group =$(this).closest('.filter-group');
+        const $dropdown = $group.find('.gs-dropdown');$('.gs-dropdown').not($dropdown).removeClass('show');$dropdown.toggleClass('show');
       });
 
       $(document).on('click', function(e) {
-        if (!$(e.target).closest('.filter-group').length) {
-          $('.gs-dropdown').removeClass('show');
-        }
+        if (!$(e.target).closest('.filter-group').length)$('.gs-dropdown').removeClass('show');
       });
 
-      $('.gs-dropdown').on('click', function(e) { e.stopPropagation(); });
+      $('.gs-dropdown').on('click', e => e.stopPropagation());
 
       $('.gs-search-input').on('keyup', function() {
-        const query = $(this).val().toLowerCase();
-        const $list = $(this).closest('.gs-dropdown').find('.gs-options-list');
-        $list.find('.gs-option-item').each(function() {
-          const txt = $(this).text().toLowerCase();
-          $(this).toggle(txt.includes(query));
+        const query = $(this).val().toLowerCase();$(this).closest('.gs-dropdown').find('.gs-option-item').each(function() {
+          $(this).toggle($(this).text().toLowerCase().includes(query));
         });
       });
 
       $('.btn-select-filtered').on('click', function() {
-        const $group = $(this).closest('.filter-group');
-        const filterKey = $group.data('filter');
-        const query = $group.find('.gs-search-input').val().trim();
-
-        $group.find('.gs-option-item:visible input[type="checkbox"]').prop('checked', true);
-
-        const selected = [];
-        $group.find('.gs-options-list input[type="checkbox"]:checked').each(function() {
-          selected.push($(this).val());
-        });
-
-        filtersState[filterKey].selected = selected;
-        filtersState[filterKey].searchText = query;
-
-        updateFilterBoxUI($group, filterKey);
-        $group.find('.gs-dropdown').removeClass('show');
-        renderDashboard();
+        const $group =$(this).closest('.filter-group');
+        const filterKey = $group.data('filter');$group.find('.gs-option-item:visible input[type="checkbox"]').prop('checked', true);
+        applyFilterState($group, filterKey);
       });
 
       $('.btn-clear-all').on('click', function() {
-        const $group = $(this).closest('.filter-group');
-        $group.find('.gs-options-list input[type="checkbox"]').prop('checked', false);
+        const $group = $(this).closest('.filter-group');$group.find('.gs-options-list input[type="checkbox"]').prop('checked', false);
         $group.find('.gs-search-input').val('').trigger('keyup');
       });
 
-      $('.gs-btn-cancel').on('click', function() {
-        $(this).closest('.gs-dropdown').removeClass('show');
-      });
+      $('.gs-btn-cancel').on('click', function() {$(this).closest('.gs-dropdown').removeClass('show'); });
 
       $('.gs-btn-accept').on('click', function() {
-        const $group = $(this).closest('.filter-group');
-        const filterKey = $group.data('filter');
-        const query = $group.find('.gs-search-input').val().trim();
+        const $group =$(this).closest('.filter-group');
+        applyFilterState($group,$group.data('filter'));
+      });
 
-        const selected = [];
-        $group.find('.gs-options-list input[type="checkbox"]:checked').each(function() {
-          selected.push($(this).val());
-        });
-
-        filtersState[filterKey].selected = selected;
-        filtersState[filterKey].searchText = query;
-
-        updateFilterBoxUI($group, filterKey);
-        $group.find('.gs-dropdown').removeClass('show');
+      $('#btn-reset-all').on('click', function() {
+        resetFiltersState();
         renderDashboard();
       });
+
+      $('#btn-exportar-csv').on('click', exportFilteredDataCSV);
 
       loadSheetData();
     });
 
+    function applyFilterState($group, filterKey) {
+      const selected = [];
+      $group.find('.gs-options-list input[type="checkbox"]:checked').each(function() {
+        selected.push($(this).val());
+      });
+      filtersState[filterKey].selected = selected;
+      filtersState[filterKey].searchText = $group.find('.gs-search-input').val().trim();
+
+      updateFilterBoxUI($group, filterKey);$group.find('.gs-dropdown').removeClass('show');
+      pageSI = 1; pageNO = 1;
+      renderDashboard();
+    }
+
     function updateFilterBoxUI($group, filterKey) {
       const state = filtersState[filterKey];
       const count = state.selected.length;
-      const $box = $group.find('.gs-filter-box');
-      const $text = $box.find('.gs-filter-text');
-      const $icon = $box.find('.gs-filter-icon');
+      const $box =$group.find('.gs-filter-box');
+      const $text =$box.find('.gs-filter-text');
+      const $icon =$box.find('.gs-filter-icon');
 
       if (count === 0) {
         $box.removeClass('is-filtered');
-        $text.text('Todos (filtrar...)');
-        $icon.attr('class', 'fa-solid fa-caret-down gs-filter-icon');
+        $text.text('Todos (filtrar...)');$icon.attr('class', 'fa-solid fa-caret-down gs-filter-icon');
       } else {
-        $box.addClass('is-filtered');
-        $icon.attr('class', 'fa-solid fa-filter gs-filter-icon');
-
-        let textLabel = count === 1 ? state.selected[0] : `${count} seleccionados`;
-        if (state.searchText !== "") {
-          textLabel += ` ("${state.searchText}")`;
-        }
-        $text.text(textLabel);
+        $box.addClass('is-filtered');$icon.attr('class', 'fa-solid fa-filter gs-filter-icon');
+        let label = count === 1 ? state.selected[0] : `${count} seleccionados`;
+        if (state.searchText) label += ` ("${state.searchText}")`;
+        $text.text(label);
       }
     }
 
     function loadSheetData() {
       showLoader();
-      const targetUrl = SHEETS_URLS[currentSheetKey];
+      $('#status-box').html(`<i class="fa-solid fa-spinner fa-spin"></i> Cargando...`);
 
-      document.getElementById('status-box').innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Cargando base...`;
-
-      Papa.parse(targetUrl, {
+      Papa.parse(SHEETS_URLS[currentSheetKey], {
         download: true,
         header: true,
         skipEmptyLines: true,
         complete: function(results) {
-          let loadedData = results.data;
-          
-          // FILTRADO EXCLUSIVO PARA EJECUCIONES: Omitir registros donde Cod Tecnico sea "Validar"
+          let data = results.data.map(normalizeRowKeys);
+
           if (currentSheetKey === "ejecuciones") {
-            loadedData = loadedData.filter(d => {
-              const codTec = String(d['Cod Tecnico'] || d['Cod Técnico'] || d['Cod_Tecnico'] || '').trim();
-              return codTec.toUpperCase() !== "VALIDAR";
-            });
+            data = data.filter(d => String(d.usuario).toUpperCase().trim() !== "VALIDAR");
           }
 
-          rawData = loadedData;
-          document.getElementById('status-box').innerHTML = `<i class="fa-solid fa-circle-check"></i> Base Actualizada (${rawData.length} registros)`;
+          rawData = data;
+          $('#status-box').html(`<i class="fa-solid fa-circle-check"></i> Base Actualizada (${rawData.length} reg)`);
           populateFilterLists();
           setMesActualDefault();
           renderDashboard();
           hideLoader();
         },
-        error: function(err) {
-          document.getElementById('status-box').style.background = "#ffebee";
-          document.getElementById('status-box').style.color = "#c62828";
-          document.getElementById('status-box').innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Error al conectar base`;
+        error: function() {
+          $('#status-box').css({ background: "#ffebee", color: "#c62828" })
+            .html(`<i class="fa-solid fa-triangle-exclamation"></i> Error de conexión`);
           hideLoader();
         }
       });
@@ -1382,66 +1394,32 @@
     function populateFilterLists() {
       if (rawData.length === 0) return;
 
-      const getUnique = (keyNames) => {
-        let values = [];
-        rawData.forEach(d => {
-          for (let k of keyNames) {
-            if (d[k]) { values.push(String(d[k]).trim()); break; }
-          }
-        });
-        return [...new Set(values.filter(Boolean))].sort();
-      };
-
-      const getUniqueMesesCronologico = () => {
-        let values = [];
-        rawData.forEach(d => {
-          const m = d['Mes'] || d['mes'];
-          if (m) values.push(String(m).trim());
-        });
-        const unicos = [...new Set(values.filter(Boolean))];
-        return unicos.sort((a, b) => getMesIndex(a) - getMesIndex(b));
-      };
-
-      const getUniqueLocalAndCCU = () => {
-        let values = [];
-        rawData.forEach(d => {
-          const loc = d['Local'] || d['local'];
-          const ccu = d['ID CCU'] || d['ID'] || d['Id CCU'] || d['id_ccu'] || d['ID Cliente (Escaneado)'] || d['ID Cliente (Manual)'];
-          if (loc) values.push(String(loc).trim());
-          if (ccu) values.push(String(ccu).trim());
-        });
-        return [...new Set(values.filter(Boolean))].sort();
-      };
-
       const fillFilterUI = (filterKey, valuesArray) => {
-        const $group = $(`.filter-group[data-filter="${filterKey}"]`);
-        const $list = $group.find('.gs-options-list');
-        $list.empty();
-
+        const $list =$(`.filter-group[data-filter="${filterKey}"]`).find('.gs-options-list').empty();
         valuesArray.forEach((val, idx) => {
           $list.append(`
             <label class="gs-option-item">
-              <input type="checkbox" value="${val}" id="${filterKey}-${idx}">
-              <span>${val}</span>
+              <input type="checkbox" value="${escapeHTML(val)}" id="${filterKey}-${idx}">
+              <span>${escapeHTML(val)}</span>
             </label>
           `);
         });
       };
 
-      fillFilterUI('mes', getUniqueMesesCronologico());
-      fillFilterUI('usuario', getUnique(['Cod Tecnico', 'Cod Técnico', 'Tecnico', 'Tecnico ', 'Técnico', 'Usuario', 'STCYG', 'usuario', 'Inspector', 'Inspector/a']));
-      fillFilterUI('localId', getUniqueLocalAndCCU());
-      fillFilterUI('cliente', getUnique(['Razon Social', 'Razón Social', 'Nombre Fantasía', 'Nombre Fantasía ', 'Nombre de Fantasia', 'Nombre Fantasia', 'Nombre Receptor', 'Cliente', 'cliente', 'Oficina', 'Persona que Re']));
+      const getUnique = fn => [...new Set(rawData.map(fn).filter(Boolean))].sort();
+
+      fillFilterUI('mes', getUnique(d => d.mes).sort((a, b) => getMesIndex(a) - getMesIndex(b)));
+      fillFilterUI('usuario', getUnique(d => d.usuario));
+      fillFilterUI('localId', getUnique(d => d.local || d.idCCU));
+      fillFilterUI('cliente', getUnique(d => d.cliente));
     }
 
     function setMesActualDefault() {
-      const currentMonthIndex = new Date().getMonth();
-      const currentMonthName = nombresMeses[currentMonthIndex];
-      const $group = $('.filter-group[data-filter="mes"]');
+      const currentMonthName = nombresMeses[new Date().getMonth()];
+      const $group =$('.filter-group[data-filter="mes"]');
 
       $group.find('.gs-options-list input[type="checkbox"]').each(function() {
-        if ($(this).val().toLowerCase() === currentMonthName.toLowerCase()) {
-          $(this).prop('checked', true);
+        if ($(this).val().toLowerCase() === currentMonthName.toLowerCase()) {$(this).prop('checked', true);
           filtersState.mes.selected = [$(this).val()];
           updateFilterBoxUI($group, 'mes');
         }
@@ -1449,102 +1427,53 @@
     }
 
     function getFilteredDataWithoutMonth() {
-      const fUsuario = filtersState.usuario.selected;
-      const fLocalId = filtersState.localId.selected;
-      const fCliente = filtersState.cliente.selected;
-
-      const fInicioStr = $('#filter-fecha-inicio').val();
-      const fFinStr = $('#filter-fecha-fin').val();
-      const fInicio = fInicioStr ? new Date(fInicioStr) : null;
-      const fFin = fFinStr ? new Date(fFinStr) : null;
+      const fUsr = filtersState.usuario.selected;
+      const fLoc = filtersState.localId.selected;
+      const fCli = filtersState.cliente.selected;
+      const fIni = $('#filter-fecha-inicio').val() ? new Date($('#filter-fecha-inicio').val()) : null;
+      const fFin = $('#filter-fecha-fin').val() ? new Date($('#filter-fecha-fin').val()) : null;
 
       return rawData.filter(d => {
-        const dUsuario = String(d['Cod Tecnico'] || d['Cod Técnico'] || d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Usuario'] || d['usuario'] || d['Inspector'] || d['Inspector/a'] || '').trim();
-        const dLocal = String(d['Local'] || '').trim();
-        const dIdCCU = String(d['ID CCU'] || d['ID'] || d['Id CCU'] || d['ID Cliente (Escaneado)'] || d['ID Cliente (Manual)'] || '').trim();
-        const dCliente = String(getNombreCliente(d)).trim();
-        
-        const rawFecha = d['Fecha'] || d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha Realizado'] || d['Fecha/Hora'];
-        const dFecha = parseDate(rawFecha);
-
-        const matchUsuario = fUsuario.length === 0 || fUsuario.includes(dUsuario);
-        const matchLocalId = fLocalId.length === 0 || fLocalId.includes(dLocal) || fLocalId.includes(dIdCCU);
-        const matchCliente = fCliente.length === 0 || fCliente.includes(dCliente);
-
-        let matchFecha = true;
+        const dFecha = parseDate(d.fecha);
+        if (fUsr.length && !fUsr.includes(d.usuario)) return false;
+        if (fLoc.length && !fLoc.includes(d.local) && !fLoc.includes(d.idCCU)) return false;
+        if (fCli.length && !fCli.includes(d.cliente)) return false;
         if (dFecha) {
-          if (fInicio && dFecha < fInicio) matchFecha = false;
-          if (fFin && dFecha > fFin) matchFecha = false;
+          if (fIni && dFecha < fIni) return false;
+          if (fFin && dFecha > fFin) return false;
         }
-
-        return matchUsuario && matchLocalId && matchCliente && matchFecha;
+        return true;
       });
     }
 
     function getFilteredData() {
       const fMes = filtersState.mes.selected;
-      const dataWithoutMonth = getFilteredDataWithoutMonth();
-
-      return dataWithoutMonth.filter(d => {
-        const dMes = String(d['Mes'] || d['mes'] || '').trim();
-        return fMes.length === 0 || fMes.includes(dMes);
-      });
+      return getFilteredDataWithoutMonth().filter(d => !fMes.length || fMes.includes(d.mes));
     }
 
     function renderDashboard() {
       const data = getFilteredData();
-
-      let totalSI = 0;
-      let totalNO = 0;
-      let countSchop = 0;
-      let countPostMix = 0;
+      let totalSI = 0, totalNO = 0, countSchop = 0, countPostMix = 0;
 
       if (currentSheetKey === "ejecuciones") {
-        // AGRUPACIÓN POR NÚMERO DE SOLICITUD ÚNICA EN EJECUCIONES (COLUMNA N)
-        const solicitudesMap = {};
-
+        const mapSol = {};
         data.forEach(d => {
-          const numSol = String(d['Número'] || d['Número '] || d['Numero'] || d['Número de Solicitud'] || d['Proceso'] || Math.random()).trim();
+          const num = d.numeroSolicitud;
           const esSI = isServicioRealizado(d);
           const tipo = getTipoActivo(d).toUpperCase();
-
-          if (!solicitudesMap[numSol]) {
-            solicitudesMap[numSol] = { realizado: esSI, tipo: tipo };
-          } else {
-            if (esSI) solicitudesMap[numSol].realizado = true;
-          }
+          if (!mapSol[num]) mapSol[num] = { realizado: esSI, tipo };
+          else if (esSI) mapSol[num].realizado = true;
         });
 
-        Object.values(solicitudesMap).forEach(sol => {
-          if (sol.realizado) {
-            totalSI++;
-          } else {
-            totalNO++;
-          }
-
-          if (sol.tipo.includes('SCHOP')) {
-            countSchop++;
-          } else if (sol.tipo.includes('POST')) {
-            countPostMix++;
-          }
+        Object.values(mapSol).forEach(s => {
+          s.realizado ? totalSI++ : totalNO++;
+          s.tipo.includes('SCHOP') ? countSchop++ : countPostMix++;
         });
-
       } else {
         data.forEach(d => {
           const qty = getServiciosQty(d);
-          
-          if (isServicioRealizado(d)) {
-            totalSI += qty;
-          } else {
-            totalNO += qty;
-          }
-
-          const tipo = getTipoActivo(d).toUpperCase();
-          if (tipo.includes('SCHOP')) {
-            countSchop += qty;
-          } else if (tipo.includes('POST')) {
-            countPostMix += qty;
-          }
+          isServicioRealizado(d) ? (totalSI += qty) : (totalNO += qty);
+          getTipoActivo(d) === 'Schop' ? (countSchop += qty) : (countPostMix += qty);
         });
       }
 
@@ -1552,97 +1481,54 @@
       const pctSI = grandTotal > 0 ? ((totalSI / grandTotal) * 100).toFixed(1) : '0.0';
       const pctNO = grandTotal > 0 ? ((totalNO / grandTotal) * 100).toFixed(1) : '0.0';
 
-      document.getElementById('kpi-total').innerText = grandTotal.toLocaleString();
-      document.getElementById('kpi-cumplimiento').innerText = pctSI + '%';
-      
-      if (currentSheetKey === "urgencias") {
-        document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Casos Resueltos`;
-        document.getElementById('kpi-no-count').innerText = `${totalNO.toLocaleString()} Casos No Resueltos`;
-      } else if (currentSheetKey === "inspectivas") {
-        document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Factibles (Aprobadas)`;
-        document.getElementById('kpi-no-count').innerText = `${totalNO.toLocaleString()} No Factibles`;
-        
-        const promCoord = calcularPromedioCoordinacionDias(data);
-        document.getElementById('kpi-coord-dias').innerText = `${promCoord} días`;
-      } else if (currentSheetKey === "ejecuciones") {
-        document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Solicitudes Cerradas`;
-        document.getElementById('kpi-no-count').innerText = `${totalNO.toLocaleString()} Solicitudes Anuladas`;
-      } else {
-        document.getElementById('kpi-ejecutados-count').innerText = `${totalSI.toLocaleString()} Servicios Realizados`;
-        document.getElementById('kpi-no-count').innerText = `${totalNO.toLocaleString()} Servicios Pendientes`;
-      }
+      $('#kpi-total').text(grandTotal.toLocaleString());
+      $('#kpi-cumplimiento').text(pctSI + '%');
+      $('#kpi-pendientes').text(pctNO + '%');
 
-      document.getElementById('kpi-pendientes').innerText = pctNO + '%';
+      $('#kpi-ejecutados-count').text(`${totalSI.toLocaleString()} ${currentSheetKey === 'urgencias' ? 'Resueltos' : 'Realizados'}`);
+      $('#kpi-no-count').text(`${totalNO.toLocaleString()} ${currentSheetKey === 'urgencias' ? 'No Resueltos' : 'Pendientes'}`);
+
+      if (currentSheetKey === "inspectivas") {
+        let suma = 0, count = 0;
+        data.forEach(d => {
+          if (d.diasCoord !== null) {
+            const val = parseFloat(String(d.diasCoord).replace(',', '.'));
+            if (!isNaN(val) && val >= 0) { suma += val; count++; }
+          }
+        });
+        $('#kpi-coord-dias').text((count > 0 ? (suma / count) : 0).toFixed(1) + ' días');
+      }
 
       renderActivosChart(countSchop, countPostMix);
       renderTrendChart();
       renderTabla1(data);
-      
-      if (currentSheetKey !== "ejecuciones") {
-        renderTablaMotivos(data, totalNO, grandTotal);
-      }
-      
-      if (currentSheetKey === "inspectivas") {
-        renderTablaRechazosTecnicos(data);
-      }
+
+      if (currentSheetKey !== "ejecuciones") renderTablaMotivos(data, totalNO, grandTotal);
+      if (currentSheetKey === "inspectivas") renderTablaRechazosTecnicos(data);
 
       renderTabla2(data);
-      
-      if (currentSheetKey !== "ejecuciones") {
-        renderTablaNoRealizadas(data);
-      }
-      
-      if (currentSheetKey === "preventiva" || currentSheetKey === "inspectivas" || currentSheetKey === "ejecuciones") {
-        renderTablaSiRealizadas(data);
-      }
+
+      if (currentSheetKey !== "ejecuciones") renderTablaNoRealizadas(data);
+      renderTablaSiRealizadas(data);
     }
 
     function renderActivosChart(schop, postMix) {
       const ctx = document.getElementById('activosChart').getContext('2d');
-
-      if (activosChartInstance) {
-        activosChartInstance.destroy();
-      }
+      if (activosChartInstance) { activosChartInstance.destroy(); activosChartInstance = null; }
 
       activosChartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
           labels: ['Schop', 'Post Mix'],
-          datasets: [{
-            data: [schop, postMix],
-            backgroundColor: ['#006100', '#004b93'],
-            borderWidth: 2,
-            borderColor: '#ffffff'
-          }]
+          datasets: [{ data: [schop, postMix], backgroundColor: ['#006100', '#004b93'], borderWidth: 2 }]
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          layout: { padding: 2 },
+          responsive: true, maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
             datalabels: {
-              color: '#ffffff',
-              textStrokeColor: '#000000',
-              textStrokeWidth: 2,
-              font: { weight: 'bold', size: 10 },
-              formatter: function(value, context) {
-                let total = schop + postMix;
-                if (total === 0 || value === 0) return '';
-                let pct = ((value / total) * 100).toFixed(1) + '%';
-                return pct;
-              }
-            },
-            tooltip: {
-              enabled: true,
-              callbacks: {
-                label: function(context) {
-                  let total = schop + postMix;
-                  let val = context.raw;
-                  let pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-                  return `${context.label}: ${val} casos (${pct}%)`;
-                }
-              }
+              color: '#fff', font: { weight: 'bold', size: 10 },
+              formatter: val => (schop + postMix > 0) ? ((val / (schop + postMix)) * 100).toFixed(1) + '%' : ''
             }
           },
           cutout: '55%'
@@ -1650,835 +1536,236 @@
       });
     }
 
-    /* GRÁFICO DE EVOLUCIÓN MENSUAL CON ORDEN CRONOLÓGICO ESTRICTO */
     function renderTrendChart() {
       const monthlyStats = {};
-      const dataWithoutMonth = getFilteredDataWithoutMonth();
+      const dataNoMonth = getFilteredDataWithoutMonth();
 
-      if (currentSheetKey === "ejecuciones") {
-        // AGRUPACIÓN POR SOLICITUD ÚNICA POR MES EN EJECUCIONES
-        const solPorMesMap = {};
+      dataNoMonth.forEach(d => {
+        if (!d.mes) return;
+        if (!monthlyStats[d.mes]) monthlyStats[d.mes] = { SI: 0, NO: 0 };
+        const qty = getServiciosQty(d);
+        isServicioRealizado(d) ? monthlyStats[d.mes].SI += qty : monthlyStats[d.mes].NO += qty;
+      });
 
-        dataWithoutMonth.forEach(d => {
-          const mes = d['Mes'] || d['mes'];
-          if (!mes) return;
-
-          const numSol = String(d['Número'] || d['Número '] || d['Numero'] || d['Número de Solicitud'] || Math.random()).trim();
-          const keyMesSol = `${mes}_${numSol}`;
-          const esSI = isServicioRealizado(d);
-
-          if (!solPorMesMap[keyMesSol]) {
-            solPorMesMap[keyMesSol] = { mes: mes, realizado: esSI };
-          } else {
-            if (esSI) solPorMesMap[keyMesSol].realizado = true;
-          }
-        });
-
-        Object.values(solPorMesMap).forEach(item => {
-          if (!monthlyStats[item.mes]) monthlyStats[item.mes] = { SI: 0, NO: 0 };
-          if (item.realizado) {
-            monthlyStats[item.mes].SI++;
-          } else {
-            monthlyStats[item.mes].NO++;
-          }
-        });
-
-      } else {
-        dataWithoutMonth.forEach(d => {
-          const mes = d['Mes'] || d['mes'];
-          if (!mes) return;
-
-          const qty = getServiciosQty(d);
-          if (!monthlyStats[mes]) monthlyStats[mes] = { SI: 0, NO: 0 };
-
-          if (isServicioRealizado(d)) {
-            monthlyStats[mes].SI += qty;
-          } else {
-            monthlyStats[mes].NO += qty;
-          }
-        });
-      }
-
-      let labels = Object.keys(monthlyStats).sort((a, b) => getMesIndex(a) - getMesIndex(b));
-
-      if (labels.length > 13) {
-        labels = labels.slice(-13);
-      }
-
+      const labels = Object.keys(monthlyStats).sort((a, b) => getMesIndex(a) - getMesIndex(b)).slice(-13);
       const ctx = document.getElementById('trendChart').getContext('2d');
+      if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
 
-      if (trendChartInstance) {
-        trendChartInstance.destroy();
-      }
-
-      if (currentSheetKey === "urgencias") {
-        trendChartInstance = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: labels,
-            datasets: [
-              {
-                label: '% Efectividad SI',
-                data: labels.map(m => {
-                  const tot = (monthlyStats[m] ? monthlyStats[m].SI : 0) + (monthlyStats[m] ? monthlyStats[m].NO : 0);
-                  return tot > 0 ? parseFloat(((monthlyStats[m].SI / tot) * 100).toFixed(1)) : 0;
-                }),
-                backgroundColor: '#006100',
-                borderRadius: 3
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              x: {
-                grid: { display: false },
-                ticks: { font: { size: 10, weight: 'bold' }, color: '#333333' }
-              },
-              y: { display: false, max: 110 }
-            },
-            plugins: {
-              legend: { display: false },
-              datalabels: {
-                display: true,
-                color: '#ffffff',
-                textStrokeColor: '#000000',
-                textStrokeWidth: 2,
-                font: { weight: 'bold', size: 10 },
-                formatter: function(value) {
-                  return `${value}%`;
-                },
-                align: 'center',
-                anchor: 'center'
-              },
-              tooltip: {
-                callbacks: {
-                  label: function(ctx) {
-                    const m = ctx.label;
-                    const cantSI = monthlyStats[m] ? monthlyStats[m].SI : 0;
-                    const tot = (monthlyStats[m] ? monthlyStats[m].SI : 0) + (monthlyStats[m] ? monthlyStats[m].NO : 0);
-                    return `${m}: ${cantSI}/${tot} resueltos (${ctx.raw}%)`;
-                  }
-                }
-              }
-            }
-          },
-          plugins: [ChartDataLabels, {
-            id: 'customTotalSubtext',
-            afterDraw: function(chart) {
-              const ctxChart = chart.ctx;
-              ctxChart.save();
-              ctxChart.font = 'bold 10px Roboto, sans-serif';
-              ctxChart.fillStyle = '#555555';
-              ctxChart.textAlign = 'center';
-
-              const meta = chart.getDatasetMeta(0);
-              meta.data.forEach((bar, index) => {
-                const mes = labels[index];
-                const totalM = (monthlyStats[mes] ? monthlyStats[mes].SI : 0) + (monthlyStats[mes] ? monthlyStats[mes].NO : 0);
-                if (totalM > 0) {
-                  ctxChart.fillText(`(${totalM})`, bar.x, bar.y + 14);
-                }
-              });
-              ctxChart.restore();
-            }
+      trendChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: labels.map(m => {
+              const tot = monthlyStats[m].SI + monthlyStats[m].NO;
+              return tot > 0 ? parseFloat(((monthlyStats[m].SI / tot) * 100).toFixed(1)) : 0;
+            }),
+            backgroundColor: '#006100', borderRadius: 3
           }]
-        });
-      } else {
-        trendChartInstance = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: labels,
-            datasets: [
-              {
-                label: '% Cumplimiento SI',
-                data: labels.map(m => {
-                  const tot = (monthlyStats[m] ? monthlyStats[m].SI : 0) + (monthlyStats[m] ? monthlyStats[m].NO : 0);
-                  return tot > 0 ? parseFloat(((monthlyStats[m].SI / tot) * 100).toFixed(1)) : 0;
-                }),
-                backgroundColor: '#006100',
-                borderRadius: 3
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              x: {
-                grid: { display: false },
-                ticks: { font: { size: 11, weight: 'bold' }, color: '#333333' }
-              },
-              y: { display: false, max: 100 }
-            },
-            plugins: {
-              legend: { display: false },
-              datalabels: {
-                display: true,
-                color: '#ffffff',
-                textStrokeColor: '#000000',
-                textStrokeWidth: 2,
-                font: { weight: 'bold', size: 11 },
-                formatter: (v) => v + '%',
-                align: 'center',
-                anchor: 'center'
-              },
-              tooltip: {
-                callbacks: {
-                  label: function(ctx) {
-                    const m = ctx.label;
-                    const cantSI = monthlyStats[m] ? monthlyStats[m].SI : 0;
-                    const tot = (monthlyStats[m] ? monthlyStats[m].SI : 0) + (monthlyStats[m] ? monthlyStats[m].NO : 0);
-                    return `${m}: ${cantSI}/${tot} (${ctx.raw}%)`;
-                  }
-                }
-              }
-            }
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { x: { grid: { display: false } }, y: { display: false, max: 110 } },
+          plugins: {
+            legend: { display: false },
+            datalabels: { color: '#fff', font: { weight: 'bold', size: 10 }, formatter: v => v + '%' }
           }
-        });
-      }
+        }
+      });
     }
 
     function renderTabla1(data) {
-      const t1Stats = {};
-      let total1_SI = 0, total1_NO = 0;
+      const stats = {};
+      let totalSI = 0, totalNO = 0;
 
       data.forEach(d => {
         const qty = getServiciosQty(d);
         const tipo = getTipoActivo(d);
-
-        if(!t1Stats[tipo]) t1Stats[tipo] = { SI: 0, NO: 0 };
-        if(isServicioRealizado(d)) {
-          t1Stats[tipo].SI += qty;
-          total1_SI += qty;
-        } else {
-          t1Stats[tipo].NO += qty;
-          total1_NO += qty;
-        }
+        if (!stats[tipo]) stats[tipo] = { SI: 0, NO: 0 };
+        if (isServicioRealizado(d)) { stats[tipo].SI += qty; totalSI += qty; }
+        else { stats[tipo].NO += qty; totalNO += qty; }
       });
 
-      let html1 = `
-        <table>
-          <thead>
-            <tr>
-              <th class="left">Tipo de Activo</th>
-              <th>NO (Cant. / %)</th>
-              <th>SI (Cant. / %)</th>
-              <th>Total Servicios</th>
-            </tr>
-          </thead>
-          <tbody>`;
-
-      Object.keys(t1Stats).forEach(tipo => {
-        const si = t1Stats[tipo].SI;
-        const no = t1Stats[tipo].NO;
-        const tot = si + no;
-        const pctNO = tot > 0 ? ((no / tot) * 100).toFixed(1) + '%' : '0.0%';
-        const pctSI = tot > 0 ? ((si / tot) * 100).toFixed(1) + '%' : '0.0%';
-
-        html1 += `
-          <tr>
-            <td class="left"><strong>${tipo}</strong></td>
-            <td>${no} <span class="qty-badge">(${pctNO})</span></td>
-            <td>${si} <span class="qty-badge">(${pctSI})</span></td>
-            <td><strong>${tot}</strong> <span class="qty-badge">(100%)</span></td>
-          </tr>`;
+      let html = `<table><thead><tr><th class="left">Tipo de Activo</th><th>NO (%)</th><th>SI (%)</th><th>Total</th></tr></thead><tbody>`;
+      Object.keys(stats).forEach(t => {
+        const tot = stats[t].SI + stats[t].NO;
+        html += `<tr>
+          <td class="left"><strong>${escapeHTML(t)}</strong></td>
+          <td>${stats[t].NO} <span class="qty-badge">(${tot ? ((stats[t].NO/tot)*100).toFixed(1) : 0}%)</span></td>
+          <td>${stats[t].SI} <span class="qty-badge">(${tot ? ((stats[t].SI/tot)*100).toFixed(1) : 0}%)</span></td>
+          <td><strong>${tot}</strong></td>
+        </tr>`;
       });
+      const grand = totalSI + totalNO;
+      html += `<tr class="total-general"><td class="left">Total General</td>
+        <td>${totalNO} (${grand ? ((totalNO/grand)*100).toFixed(1) : 0}%)</td>
+        <td>${totalSI} (${grand ? ((totalSI/grand)*100).toFixed(1) : 0}%)</td>
+        <td>${grand}</td></tr></tbody></table>`;
 
-      const tot1_ALL = total1_SI + total1_NO;
-      const pct1_NO = tot1_ALL > 0 ? ((total1_NO / tot1_ALL) * 100).toFixed(1) + '%' : '0.0%';
-      const pct1_SI = tot1_ALL > 0 ? ((total1_SI / tot1_ALL) * 100).toFixed(1) + '%' : '0.0%';
-
-      html1 += `
-        <tr class="total-general">
-          <td class="left">Total General</td>
-          <td>${total1_NO} (${pct1_NO})</td>
-          <td>${total1_SI} (${pct1_SI})</td>
-          <td>${tot1_ALL} (100%)</td>
-        </tr>
-        </tbody></table>`;
-
-      document.getElementById('tabla-1-container').innerHTML = html1;
+      $('#tabla-1-container').html(html);
     }
 
     function renderTablaMotivos(data, totalNO, grandTotal) {
-      if (currentSheetKey === "ejecuciones") return;
-
-      const motivosStats = {};
-      const noRealizadasData = data.filter(d => !isServicioRealizado(d));
-
-      noRealizadasData.forEach(d => {
-        const qty = getServiciosQty(d);
-        const motivo = getMotivoNoServicio(d);
-        if (!motivosStats[motivo]) motivosStats[motivo] = 0;
-        motivosStats[motivo] += qty;
+      const stats = {};
+      data.filter(d => !isServicioRealizado(d)).forEach(d => {
+        const m = getMotivoNoServicio(d);
+        stats[m] = (stats[m] || 0) + getServiciosQty(d);
       });
 
-      let ordenFilas = [];
-
-      if (currentSheetKey === "urgencias" || currentSheetKey === "inspectivas") {
-        ordenFilas = Object.keys(motivosStats).sort((a, b) => motivosStats[b] - motivosStats[a]);
-      } else {
-        ordenFilas = [
-          'Local Cerrado',
-          'Cliente no permite',
-          'Desprogramar Cliente',
-          'Otro',
-          'Sin Información'
-        ];
-      }
-
-      let html = `
-        <table>
-          <thead>
-            <tr>
-              <th class="left">Motivo No Servicio / Causa</th>
-              <th>Cantidad Servicios</th>
-              <th>% del Total NO</th>
-              <th>% del Total General</th>
-            </tr>
-          </thead>
-          <tbody>`;
-
-      if (ordenFilas.length === 0) {
-        html += `
-          <tr>
-            <td colspan="4" class="no-data">🎉 Sin servicios no realizados para los filtros seleccionados.</td>
-          </tr>`;
-      } else {
-        ordenFilas.forEach(motivo => {
-          const cant = motivosStats[motivo] || 0;
-          const pctDelNO = totalNO > 0 ? ((cant / totalNO) * 100).toFixed(1) + '%' : '0.0%';
-          const pctDelTotal = grandTotal > 0 ? ((cant / grandTotal) * 100).toFixed(1) + '%' : '0.0%';
-
-          html += `
-            <tr>
-              <td class="left">• <strong>${motivo}</strong></td>
-              <td><strong>${cant}</strong></td>
-              <td><span class="qty-badge" style="font-weight:bold; color:#c62828;">${pctDelNO}</span></td>
-              <td><span class="qty-badge" style="font-weight:bold; color:var(--excel-green-dark);">${pctDelTotal}</span></td>
-            </tr>`;
-        });
-      }
-
-      const totalPctNO_General = grandTotal > 0 ? ((totalNO / grandTotal) * 100).toFixed(1) + '%' : '0.0%';
-
-      html += `
-        <tr class="total-general">
-          <td class="left">Total No Atendidos / No Resueltos</td>
-          <td>${totalNO}</td>
-          <td>100%</td>
-          <td>${totalPctNO_General}</td>
-        </tr>
-        </tbody></table>`;
-
-      document.getElementById('tabla-motivos-container').innerHTML = html;
+      let html = `<table><thead><tr><th class="left">Motivo</th><th>Cantidad</th><th>% del NO</th><th>% del Total</th></tr></thead><tbody>`;
+      Object.keys(stats).sort((a,b) => stats[b] - stats[a]).forEach(m => {
+        html += `<tr>
+          <td class="left">• <strong>${escapeHTML(m)}</strong></td>
+          <td><strong>${stats[m]}</strong></td>
+          <td><span class="qty-badge" style="color:#c62828;">${totalNO ? ((stats[m]/totalNO)*100).toFixed(1) : 0}%</span></td>
+          <td><span class="qty-badge" style="color:var(--excel-green-dark);">${grandTotal ? ((stats[m]/grandTotal)*100).toFixed(1) : 0}%</span></td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+      $('#tabla-motivos-container').html(html);
     }
 
-    /* TABLA ANALÍTICA: RANKING DE RECHAZOS POR CÓDIGO DE TÉCNICO Y CATEGORÍA (VISITAS INSPECTIVAS) */
     function renderTablaRechazosTecnicos(data) {
-      if (currentSheetKey !== "inspectivas") return;
-
-      const statsTecnicos = {};
-
+      const stats = {};
       data.forEach(d => {
-        const tec = d['Cod Tecnico'] || d['Cod Técnico'] || d['Cod_Tecnico'] || d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Inspector'] || d['Inspector/a'] || d['Usuario'] || 'Sin Asignar';
-        const tipo = getTipoActivo(d);
-        const aprobado = isServicioRealizado(d);
-
-        if (!statsTecnicos[tec]) {
-          statsTecnicos[tec] = { total: 0, rechazosSchop: 0, rechazosPostMix: 0, totalRechazos: 0 };
-        }
-
-        statsTecnicos[tec].total++;
-
-        if (!aprobado) {
-          statsTecnicos[tec].totalRechazos++;
-          if (tipo === 'Schop') {
-            statsTecnicos[tec].rechazosSchop++;
-          } else {
-            statsTecnicos[tec].rechazosPostMix++;
-          }
-        }
+        const tec = d.usuario || 'Sin Asignar';
+        if (!stats[tec]) stats[tec] = { total: 0, rechazos: 0 };
+        stats[tec].total++;
+        if (!isServicioRealizado(d)) stats[tec].rechazos++;
       });
 
-      const listaOrdenada = Object.keys(statsTecnicos).sort((a, b) => statsTecnicos[b].totalRechazos - statsTecnicos[a].totalRechazos);
-
-      let html = `
-        <table>
-          <thead>
-            <tr>
-              <th class="left">Cód. Técnico / Inspector</th>
-              <th>Total Inspecciones</th>
-              <th>Rechazos Schop</th>
-              <th>Rechazos Post Mix</th>
-              <th>Total Rechazos (NO)</th>
-              <th>% Tasa de Rechazo</th>
-            </tr>
-          </thead>
-          <tbody>`;
-
-      let sumTotalInspecciones = 0;
-      let sumRechSchop = 0;
-      let sumRechPost = 0;
-      let sumTotalRechazos = 0;
-
-      listaOrdenada.forEach(tec => {
-        const item = statsTecnicos[tec];
-        const tasaRechazo = item.total > 0 ? ((item.totalRechazos / item.total) * 100).toFixed(1) + '%' : '0.0%';
-        const esAltoRechazo = (item.totalRechazos / item.total) > 0.15;
-
-        sumTotalInspecciones += item.total;
-        sumRechSchop += item.rechazosSchop;
-        sumRechPost += item.rechazosPostMix;
-        sumTotalRechazos += item.totalRechazos;
-
-        html += `
-          <tr>
-            <td class="left"><strong>${tec}</strong></td>
-            <td>${item.total}</td>
-            <td style="color:#006100; font-weight:500;">${item.rechazosSchop}</td>
-            <td style="color:#004b93; font-weight:500;">${item.rechazosPostMix}</td>
-            <td style="font-weight:bold; color:#c62828;">${item.totalRechazos}</td>
-            <td class="${esAltoRechazo ? 'alert-red' : ''}">${tasaRechazo}</td>
-          </tr>`;
+      let html = `<table><thead><tr><th class="left">Técnico</th><th>Total</th><th>Rechazos</th><th>% Tasa Rechazo</th></tr></thead><tbody>`;
+      Object.keys(stats).sort((a,b) => stats[b].rechazos - stats[a].rechazos).forEach(tec => {
+        const pct = stats[tec].total ? ((stats[tec].rechazos / stats[tec].total) * 100).toFixed(1) : '0.0';
+        html += `<tr>
+          <td class="left"><strong>${escapeHTML(tec)}</strong></td>
+          <td>${stats[tec].total}</td>
+          <td style="color:#c62828; font-weight:bold;">${stats[tec].rechazos}</td>
+          <td class="${pct > 15 ? 'alert-red' : ''}">${pct}%</td>
+        </tr>`;
       });
-
-      const tasaGeneralRechazo = sumTotalInspecciones > 0 ? ((sumTotalRechazos / sumTotalInspecciones) * 100).toFixed(1) + '%' : '0.0%';
-
-      html += `
-        <tr class="total-general">
-          <td class="left">Total General Inspecciones</td>
-          <td>${sumTotalInspecciones}</td>
-          <td>${sumRechSchop}</td>
-          <td>${sumRechPost}</td>
-          <td>${sumTotalRechazos}</td>
-          <td>${tasaGeneralRechazo}</td>
-        </tr>
-        </tbody></table>`;
-
-      document.getElementById('tabla-rechazos-tecnicos-container').innerHTML = html;
+      html += `</tbody></table>`;
+      $('#tabla-rechazos-tecnicos-container').html(html);
     }
 
     function renderTabla2(data) {
-      // TABLA RESUMEN POR CÓDIGO DE TÉCNICO Y SOLICITUDES ÚNICAS EXCLUSIVA PARA EJECUCIONES
-      if (currentSheetKey === "ejecuciones") {
-        const tecSolMap = {};
-
-        data.forEach(d => {
-          const tec = String(d['Cod Tecnico'] || d['Cod Técnico'] || d['Tecnico'] || d['Usuario'] || 'Sin Asignar').trim();
-          const numSol = String(d['Número'] || d['Número '] || d['Numero'] || d['Número de Solicitud'] || Math.random()).trim();
-          const esSI = isServicioRealizado(d);
-
-          if (!tecSolMap[tec]) {
-            tecSolMap[tec] = { cerradas: new Set(), anuladas: new Set(), totalSol: new Set() };
-          }
-
-          tecSolMap[tec].totalSol.add(numSol);
-
-          if (esSI) {
-            tecSolMap[tec].cerradas.add(numSol);
-          } else {
-            tecSolMap[tec].anuladas.add(numSol);
-          }
-        });
-
-        const listaTecnicos = Object.keys(tecSolMap).sort((a, b) => tecSolMap[b].cerradas.size - tecSolMap[a].cerradas.size);
-
-        let htmlEjec = `
-          <table>
-            <thead>
-              <tr>
-                <th class="left">Código de Técnico</th>
-                <th>Solicitudes Cerradas (SI)</th>
-                <th>Solicitudes Anuladas (NO)</th>
-                <th>Total Solicitudes Únicas</th>
-                <th>% Cumplimiento / Efectividad</th>
-              </tr>
-            </thead>
-            <tbody>`;
-
-        let totalGeneralCerradas = 0;
-        let totalGeneralAnuladas = 0;
-        let setTotalGeneral = new Set();
-
-        listaTecnicos.forEach(tec => {
-          const item = tecSolMap[tec];
-          const cantCerradas = item.cerradas.size;
-          const cantAnuladas = item.anuladas.size;
-          const totalTec = item.totalSol.size;
-          const pct = totalTec > 0 ? ((cantCerradas / totalTec) * 100).toFixed(1) + '%' : '0.0%';
-
-          totalGeneralCerradas += cantCerradas;
-          totalGeneralAnuladas += cantAnuladas;
-          item.totalSol.forEach(s => setTotalGeneral.add(s));
-
-          htmlEjec += `
-            <tr>
-              <td class="left"><strong>${tec}</strong></td>
-              <td style="color:var(--excel-green-dark); font-weight:bold;">${cantCerradas}</td>
-              <td style="color:#c62828;">${cantAnuladas}</td>
-              <td><strong>${totalTec}</strong></td>
-              <td><strong>${pct}</strong></td>
-            </tr>`;
-        });
-
-        const grandTotSol = setTotalGeneral.size;
-        const pctGeneral = grandTotSol > 0 ? ((totalGeneralCerradas / grandTotSol) * 100).toFixed(1) + '%' : '0.0%';
-
-        htmlEjec += `
-          <tr class="total-general">
-            <td class="left">Total General Solicitudes</td>
-            <td>${totalGeneralCerradas}</td>
-            <td>${totalGeneralAnuladas}</td>
-            <td>${grandTotSol}</td>
-            <td>${pctGeneral}</td>
-          </tr>
-          </tbody></table>`;
-
-        document.getElementById('tabla-2-container').innerHTML = htmlEjec;
-        return;
-      }
-
-      // VISTA TRADICIONAL POR CATEGORÍA Y TÉCNICO PARA PREVENTIVA, URGENCIAS E INSPECTIVAS
-      const t2Stats = {};
+      const stats = {};
       data.forEach(d => {
-        const qty = getServiciosQty(d);
         const cat = getCategoriaTecnico(d);
-        const usr = d['Cod Tecnico'] || d['Cod Técnico'] || d['Usuario'] || d['usuario'] || d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Inspector'] || d['Inspector/a'] || 'Sin Usuario';
-        const tec = d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Jefe de Ventas'] || d['Inspector'] || d['Inspector/a'] || usr;
-
-        if(!t2Stats[cat]) t2Stats[cat] = {};
-        if(!t2Stats[cat][usr]) t2Stats[cat][usr] = { tecnico: tec, SI: 0, NO: 0 };
-        
-        if(isServicioRealizado(d)) {
-          t2Stats[cat][usr].SI += qty;
-        } else {
-          t2Stats[cat][usr].NO += qty;
-        }
+        const usr = d.usuario || 'Sin Asignar';
+        if (!stats[cat]) stats[cat] = {};
+        if (!stats[cat][usr]) stats[cat][usr] = { tec: d.tecnicoNombre, SI: 0, NO: 0 };
+        const qty = getServiciosQty(d);
+        isServicioRealizado(d) ? stats[cat][usr].SI += qty : stats[cat][usr].NO += qty;
       });
 
-      let html2 = `
-        <table>
-          <thead>
-            <tr>
-              <th class="left">Categoría</th>
-              <th class="left">Usuario / Cód. Técnico</th>
-              <th class="left">Técnico / Inspector</th>
-              <th>NO (Cant. / %)</th>
-              <th>SI (Cant. / %)</th>
-              <th>Total Servicios</th>
-            </tr>
-          </thead>
-          <tbody>`;
-
-      let grandNO = 0, grandSI = 0;
-
-      let stcyg34Data = null;
-      if (currentSheetKey === "preventiva") {
-        stcyg34Data = { Schop: null, PostMix: null };
-        if (t2Stats['Schop'] && t2Stats['Schop']['STCYG34']) {
-          stcyg34Data.Schop = jQuery.extend(true, {}, t2Stats['Schop']['STCYG34']);
-          delete t2Stats['Schop']['STCYG34'];
-        }
-        if (t2Stats['Post Mix'] && t2Stats['Post Mix']['STCYG34']) {
-          stcyg34Data.PostMix = jQuery.extend(true, {}, t2Stats['Post Mix']['STCYG34']);
-          delete t2Stats['Post Mix']['STCYG34'];
-        }
-      }
-
-      let categoriasOrdenadas = Object.keys(t2Stats);
-      if (currentSheetKey === "preventiva") {
-        categoriasOrdenadas.sort((a, b) => {
-          if (a.toUpperCase().includes('POST')) return -1;
-          if (b.toUpperCase().includes('POST')) return 1;
-          return a.localeCompare(b);
-        });
-      }
-
-      categoriasOrdenadas.forEach(cat => {
-        let catSI = 0, catNO = 0;
-        const usuariosOrdenados = Object.keys(t2Stats[cat]).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
-
-        usuariosOrdenados.forEach(usr => {
-          const uData = t2Stats[cat][usr];
-          const tot = uData.SI + uData.NO;
-          catSI += uData.SI;
-          catNO += uData.NO;
-
-          const pctSI_num = tot > 0 ? (uData.SI / tot) * 100 : 0;
-          const pctNO_num = tot > 0 ? (uData.NO / tot) * 100 : 0;
-          
-          const pctNO = pctNO_num.toFixed(1) + '%';
-          const pctSI = pctSI_num.toFixed(1) + '%';
-
-          const alertClass = pctSI_num < 92 ? 'alert-red' : '';
-
-          html2 += `
-            <tr>
-              <td class="left">• ${cat}</td>
-              <td class="left">• ${usr}</td>
-              <td class="left">${uData.tecnico}</td>
-              <td class="${alertClass}">${uData.NO} <span class="qty-badge">(${pctNO})</span></td>
-              <td>${uData.SI} <span class="qty-badge">(${pctSI})</span></td>
-              <td><strong>${tot}</strong> <span class="qty-badge">(100%)</span></td>
-            </tr>`;
-        });
-
-        grandSI += catSI;
-        grandNO += catNO;
-
-        const catTot = catSI + catNO;
-        const catPctNO = catTot > 0 ? ((catNO / catTot) * 100).toFixed(1) + '%' : '0.0%';
-        const catPctSI = catTot > 0 ? ((catSI / catTot) * 100).toFixed(1) + '%' : '0.0%';
-
-        html2 += `
-          <tr class="subtotal">
-            <td colspan="3" class="left">Total ${cat}</td>
-            <td>${catNO} (${catPctNO})</td>
-            <td>${catSI} (${catPctSI})</td>
-            <td>${catTot} (100%)</td>
+      let html = `<table><thead><tr><th class="left">Categoría</th><th class="left">Usuario</th><th class="left">Técnico</th><th>NO</th><th>SI</th><th>Total</th></tr></thead><tbody>`;
+      Object.keys(stats).forEach(cat => {
+        Object.keys(stats[cat]).forEach(usr => {
+          const u = stats[cat][usr];
+          const tot = u.SI + u.NO;
+          html += `<tr>
+            <td class="left">• ${escapeHTML(cat)}</td>
+            <td class="left">${escapeHTML(usr)}</td>
+            <td class="left">${escapeHTML(u.tec)}</td>
+            <td>${u.NO}</td>
+            <td>${u.SI}</td>
+            <td><strong>${tot}</strong></td>
           </tr>`;
+        });
       });
+      html += `</tbody></table>`;
+      $('#tabla-2-container').html(html);
+    }
 
-      if (currentSheetKey === "preventiva" && stcyg34Data && (stcyg34Data.Schop || stcyg34Data.PostMix)) {
-        let hibridoSI = 0, hibridoNO = 0;
+    function renderTablaSiRealizadas(data) {
+      const list = data.filter(d => isServicioRealizado(d));
+      const totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
+      if (pageSI > totalPages) pageSI = totalPages;
 
-        if (stcyg34Data.Schop) {
-          const uData = stcyg34Data.Schop;
-          const tot = uData.SI + uData.NO;
-          hibridoSI += uData.SI;
-          hibridoNO += uData.NO;
-          const pctSI_num = tot > 0 ? (uData.SI / tot) * 100 : 0;
-          const pctNO_num = tot > 0 ? (uData.NO / tot) * 100 : 0;
+      const pagedData = list.slice((pageSI - 1) * PAGE_SIZE, pageSI * PAGE_SIZE);
 
-          html2 += `
-            <tr>
-              <td class="left">• Híbrido (Schop)</td>
-              <td class="left">• STCYG34</td>
-              <td class="left">${uData.tecnico}</td>
-              <td class="${pctSI_num < 92 ? 'alert-red' : ''}">${uData.NO} <span class="qty-badge">(${pctNO_num.toFixed(1)}%)</span></td>
-              <td>${uData.SI} <span class="qty-badge">(${pctSI_num.toFixed(1)}%)</span></td>
-              <td><strong>${tot}</strong> <span class="qty-badge">(100%)</span></td>
-            </tr>`;
+      let html = `<table><thead><tr><th class="left">Cód. Técnico</th><th class="left">Fecha</th><th class="left">ID CCU</th><th class="left">Cliente</th><th style="text-align:center;">Foto</th></tr></thead><tbody>`;
+      pagedData.forEach(d => {
+        let fotoHtml = '<span style="color:#bbb;">Sin foto</span>';
+        if (d.foto1 && d.foto1.startsWith('http')) {
+          fotoHtml = `<div class="img-container"><img src="${escapeHTML(d.foto1)}" class="thumb-img" alt="Foto" loading="lazy"></div>`;
         }
+        html += `<tr>
+          <td class="left"><strong>${escapeHTML(d.usuario)}</strong></td>
+          <td class="left">${formatDiaMes(d.fecha)}</td>
+          <td class="left">${escapeHTML(d.idCCU)}</td>
+          <td class="left">${escapeHTML(d.cliente)}</td>
+          <td style="text-align:center;">${fotoHtml}</td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+      $('#tabla-si-realizadas-container').html(html);
 
-        if (stcyg34Data.PostMix) {
-          const uData = stcyg34Data.PostMix;
-          const tot = uData.SI + uData.NO;
-          hibridoSI += uData.SI;
-          hibridoNO += uData.NO;
-          const pctSI_num = tot > 0 ? (uData.SI / tot) * 100 : 0;
-          const pctNO_num = tot > 0 ? (uData.NO / tot) * 100 : 0;
-
-          html2 += `
-            <tr>
-              <td class="left">• Híbrido (Post Mix)</td>
-              <td class="left">• STCYG34</td>
-              <td class="left">${uData.tecnico}</td>
-              <td class="${pctSI_num < 92 ? 'alert-red' : ''}">${uData.NO} <span class="qty-badge">(${pctNO_num.toFixed(1)}%)</span></td>
-              <td>${uData.SI} <span class="qty-badge">(${pctSI_num.toFixed(1)}%)</span></td>
-              <td><strong>${tot}</strong> <span class="qty-badge">(100%)</span></td>
-            </tr>`;
-        }
-
-        grandSI += hibridoSI;
-        grandNO += hibridoNO;
-
-        const hibTot = hibridoSI + hibridoNO;
-        const hibPctNO = hibTot > 0 ? ((hibridoNO / hibTot) * 100).toFixed(1) + '%' : '0.0%';
-        const hibPctSI = hibTot > 0 ? ((hibridoSI / hibTot) * 100).toFixed(1) + '%' : '0.0%';
-
-        html2 += `
-          <tr class="subtotal" style="background-color: #e3f2fd; color: #0d47a1;">
-            <td colspan="3" class="left">Total Híbrido</td>
-            <td>${hibridoNO} (${hibPctNO})</td>
-            <td>${hibridoSI} (${hibPctSI})</td>
-            <td>${hibTot} (100%)</td>
-          </tr>`;
-      }
-
-      const grandALL = grandSI + grandNO;
-      const grandPctNO = grandALL > 0 ? ((grandNO / grandALL) * 100).toFixed(1) + '%' : '0.0%';
-      const grandPctSI = grandALL > 0 ? ((grandSI / grandALL) * 100).toFixed(1) + '%' : '0.0%';
-
-      html2 += `
-        <tr class="total-general">
-          <td colspan="3" class="left">Total General</td>
-          <td>${grandNO} (${grandPctNO})</td>
-          <td>${grandSI} (${grandPctSI})</td>
-          <td>${grandALL} (100%)</td>
-        </tr>
-        </tbody></table>`;
-
-      document.getElementById('tabla-2-container').innerHTML = html2;
+      $('#page-bar-si').html(`
+        <span>Mostrando página ${pageSI} de ${totalPages} (${list.length} registros)</span>
+        <div class="pagination-controls">
+          <button class="page-btn" ${pageSI <= 1 ? 'disabled' : ''} onclick="changePageSI(-1)">Anterior</button>
+          <button class="page-btn" ${pageSI >= totalPages ? 'disabled' : ''} onclick="changePageSI(1)">Siguiente</button>
+        </div>
+      `);
     }
 
     function renderTablaNoRealizadas(data) {
-      if (currentSheetKey === "ejecuciones") return;
+      const list = data.filter(d => !isServicioRealizado(d));
+      const totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
+      if (pageNO > totalPages) pageNO = totalPages;
 
-      let noRealizadas = data.filter(d => !isServicioRealizado(d));
+      const pagedData = list.slice((pageNO - 1) * PAGE_SIZE, pageNO * PAGE_SIZE);
 
-      if (noRealizadas.length === 0) {
-        document.getElementById('tabla-no-realizadas-container').innerHTML = `<div class="no-data">🎉 No hay casuística pendiente.</div>`;
-        return;
-      }
-
-      noRealizadas.sort((a, b) => {
-        const rawA = a['Fecha/Hora Ejecución 1'] || a['Fecha Programada 2'] || a['Fecha'] || a['Fecha Realizado'] || a['Fecha/Hora'] || '';
-        const rawB = b['Fecha/Hora Ejecución 1'] || b['Fecha Programada 2'] || b['Fecha'] || b['Fecha Realizado'] || b['Fecha/Hora'] || '';
-        const dateA = parseDate(rawA);
-        const dateB = parseDate(rawB);
-        if (!dateA) return 1;
-        if (!dateB) return -1;
-        return dateB - dateA;
+      let html = `<table><thead><tr><th class="left">Cód. Técnico</th><th class="left">Fecha</th><th class="left">Cliente</th><th class="left">Motivo</th></tr></thead><tbody>`;
+      pagedData.forEach(d => {
+        html += `<tr>
+          <td class="left"><strong>${escapeHTML(d.usuario)}</strong></td>
+          <td class="left">${formatDiaMes(d.fecha)}</td>
+          <td class="left">${escapeHTML(d.cliente)}</td>
+          <td class="left" style="color:#c62828;">${escapeHTML(getMotivoNoServicio(d))}</td>
+        </tr>`;
       });
-
-      const esInspectivas = currentSheetKey === "inspectivas";
-
-      let html = `
-        <table>
-          <thead>
-            <tr>
-              <th class="left">Cód. Técnico / Inspector</th>
-              <th class="left">Fecha</th>
-              <th class="left">${esInspectivas ? 'Cliente (Razón Social)' : 'Cliente'}</th>
-              <th class="left">Motivo / Resuelto</th>
-              <th class="left">Comentario No Resuelto</th>
-              ${!esInspectivas ? '<th style="text-align:center;">Fotos</th>' : ''}
-            </tr>
-          </thead>
-          <tbody>`;
-
-      noRealizadas.forEach(d => {
-        const tec = d['Cod Tecnico'] || d['Cod Técnico'] || d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Usuario'] || d['Inspector'] || d['Inspector/a'] || '-';
-        const rawFecha = d['Fecha'] || d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
-        const fechaFormateada = formatDiaMes(rawFecha);
-        const cliente = getNombreCliente(d);
-        
-        const motivo = getMotivoNoServicio(d);
-        const comentario = d['Comentario No Resuelto'] || d['Comentario Motivo'] || d['Comentario'] || d['Observaciones'] || '-';
-        
-        const fotoUrl1 = d['Imagen 1'] || d['Foto Equipo'] || d['Foto Motivo'] || d['Foto Columnas o Post Mix'] || '';
-        const fotoUrl2 = d['Imagen 2'] || d['Foto Equipo 2'] || d['Foto Salida FNE'] || '';
-
-        let fotosHtml = '<span style="color:#bbb;">Sin fotos</span>';
-        if ((fotoUrl1 && fotoUrl1.startsWith('http')) || (fotoUrl2 && fotoUrl2.startsWith('http'))) {
-          fotosHtml = '<div class="photos-flex">';
-          if (fotoUrl1 && fotoUrl1.startsWith('http')) {
-            fotosHtml += `<div class="img-container"><img src="${fotoUrl1}" class="thumb-img" alt="Foto 1" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'"></div>`;
-          }
-          if (fotoUrl2 && fotoUrl2.startsWith('http')) {
-            fotosHtml += `<div class="img-container"><img src="${fotoUrl2}" class="thumb-img" alt="Foto 2" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'"></div>`;
-          }
-          fotosHtml += '</div>';
-        }
-
-        html += `
-          <tr>
-            <td class="left"><strong>${tec}</strong></td>
-            <td class="left">${fechaFormateada}</td>
-            <td class="left">${cliente}</td>
-            <td class="left" style="color: #c62828; font-weight: 500;">${motivo}</td>
-            <td class="left" style="font-size: 11px; color: #555;">${comentario}</td>
-            ${!esInspectivas ? `<td style="text-align:center;">${fotosHtml}</td>` : ''}
-          </tr>`;
-      });
-
       html += `</tbody></table>`;
-      document.getElementById('tabla-no-realizadas-container').innerHTML = html;
+      $('#tabla-no-realizadas-container').html(html);
+
+      $('#page-bar-no').html(`
+        <span>Mostrando página ${pageNO} de ${totalPages} (${list.length} registros)</span>
+        <div class="pagination-controls">
+          <button class="page-btn" ${pageNO <= 1 ? 'disabled' : ''} onclick="changePageNO(-1)">Anterior</button>
+          <button class="page-btn" ${pageNO >= totalPages ? 'disabled' : ''} onclick="changePageNO(1)">Siguiente</button>
+        </div>
+      `);
     }
 
-    /* RENDER EXCLUSIVO TABLA DE REALIZADOS */
-    function renderTablaSiRealizadas(data) {
-      let siRealizadas = data.filter(d => isServicioRealizado(d));
+    function changePageSI(delta) { pageSI += delta; renderTablaSiRealizadas(getFilteredData()); }
+    function changePageNO(delta) { pageNO += delta; renderTablaNoRealizadas(getFilteredData()); }
 
-      if (siRealizadas.length === 0) {
-        document.getElementById('tabla-si-realizadas-container').innerHTML = `<div class="no-data">Sin servicios realizados con los filtros seleccionados.</div>`;
-        return;
-      }
+    function exportFilteredDataCSV() {
+      const data = getFilteredData();
+      if (!data.length) return alert("No hay datos para exportar.");
 
-      // Deduplicación por N° Solicitud única en la pestaña Ejecuciones
-      if (currentSheetKey === "ejecuciones") {
-        const solicitudesVistas = new Set();
-        siRealizadas = siRealizadas.filter(d => {
-          const numSol = String(d['Número'] || d['Número '] || d['Numero'] || d['Número de Solicitud'] || '').trim();
-          if (!numSol || numSol === '-') return true;
-          if (solicitudesVistas.has(numSol)) {
-            return false;
-          }
-          solicitudesVistas.add(numSol);
-          return true;
-        });
-      }
+      const exportRows = data.map(d => ({
+        Pestaña: currentSheetKey,
+        Mes: d.mes,
+        Fecha: d.fecha,
+        Tecnico: d.usuario,
+        Cliente: d.cliente,
+        ID_CCU: d.idCCU,
+        Realizado: isServicioRealizado(d) ? "SI" : "NO",
+        Motivo: getMotivoNoServicio(d)
+      }));
 
-      siRealizadas.sort((a, b) => {
-        const rawA = a['Fecha'] || a['Fecha/Hora Ejecución 1'] || a['Fecha Programada 2'] || a['Fecha Realizado'] || a['Fecha/Hora'] || '';
-        const rawB = b['Fecha'] || b['Fecha/Hora Ejecución 1'] || b['Fecha Programada 2'] || b['Fecha Realizado'] || b['Fecha/Hora'] || '';
-        const dateA = parseDate(rawA);
-        const dateB = parseDate(rawB);
-        if (!dateA) return 1;
-        if (!dateB) return -1;
-        return dateB - dateA;
-      });
-
-      const esEjecuciones = currentSheetKey === "ejecuciones";
-      const esInspectivas = currentSheetKey === "inspectivas";
-
-      let html = `
-        <table>
-          <thead>
-            <tr>
-              ${esEjecuciones ? '<th class="left">N° Solicitud</th>' : ''}
-              <th class="left">${esEjecuciones ? 'Cód. Técnico' : 'Cód. Técnico / Inspector'}</th>
-              <th class="left">Fecha</th>
-              <th class="left">${esEjecuciones ? 'Proceso' : 'ID CCU'}</th>
-              <th class="left">${esEjecuciones ? 'Receptor (Persona que Re)' : (esInspectivas ? 'Cliente (Razón Social)' : 'Cliente (Nombre Fantasía)')}</th>
-              <th class="left">${esEjecuciones ? 'Comentario / Proceso' : 'Nombre Receptor'}</th>
-              ${!esInspectivas ? `<th style="text-align:center;">${esEjecuciones ? 'Imágenes (1 y 2)' : 'Foto Columnas / Post Mix'}</th>` : ''}
-            </tr>
-          </thead>
-          <tbody>`;
-
-      siRealizadas.forEach(d => {
-        const tec = d['Cod Tecnico'] || d['Cod Técnico'] || d['Usuario'] || d['Técnico'] || d['Tecnico'] || d['Inspector'] || d['Inspector/a'] || '-';
-        const rawFecha = d['Fecha'] || d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
-        const fechaFormateada = formatDiaMes(rawFecha);
-        const numSolicitud = d['Número'] || d['Número '] || d['Numero'] || d['Número de Solicitud'] || '-';
-        const idCCU = esEjecuciones ? (d['Proceso'] || '-') : getIdCCU(d);
-        const cliente = esEjecuciones ? getNombreReceptor(d) : getNombreCliente(d);
-        const receptor = esEjecuciones ? (d['Proceso'] || '-') : getNombreReceptor(d);
-        
-        const fotoUrl1 = d['Imagen 1'] || d['Foto Columnas o Post Mix'] || d['Foto Equipo'] || d['Foto Motivo'] || '';
-        const fotoUrl2 = d['Imagen 2'] || d['Foto Equipo 2'] || d['Foto Salida FNE'] || '';
-
-        let fotoHtml = '<span style="color:#bbb;">Sin fotos</span>';
-        if ((fotoUrl1 && fotoUrl1.startsWith('http')) || (fotoUrl2 && fotoUrl2.startsWith('http'))) {
-          fotoHtml = '<div class="photos-flex">';
-          if (fotoUrl1 && fotoUrl1.startsWith('http')) {
-            fotoHtml += `<div class="img-container"><img src="${fotoUrl1}" class="thumb-img" alt="Imagen 1" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'"></div>`;
-          }
-          if (fotoUrl2 && fotoUrl2.startsWith('http')) {
-            fotoHtml += `<div class="img-container"><img src="${fotoUrl2}" class="thumb-img" alt="Imagen 2" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'"></div>`;
-          }
-          fotoHtml += '</div>';
-        }
-
-        html += `
-          <tr>
-            ${esEjecuciones ? `<td class="left" style="font-weight:700; color:var(--excel-green-dark);">${numSolicitud}</td>` : ''}
-            <td class="left"><strong>${tec}</strong></td>
-            <td class="left">${fechaFormateada}</td>
-            <td class="left" style="font-weight: 500;">${idCCU}</td>
-            <td class="left">${cliente}</td>
-            <td class="left" style="font-weight: 500;">${receptor}</td>
-            ${!esInspectivas ? `<td style="text-align:center;">${fotoHtml}</td>` : ''}
-          </tr>`;
-      });
-
-      html += `</tbody></table>`;
-      document.getElementById('tabla-si-realizadas-container').innerHTML = html;
+      const csv = Papa.unparse(exportRows);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Reporte_${currentSheetKey}_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   </script>
 </body>
