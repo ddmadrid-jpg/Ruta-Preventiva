@@ -1035,6 +1035,9 @@
     }
 
     function getNombreReceptor(d) {
+      if (currentSheetKey === "ejecuciones") {
+        return d['Persona que Re'] || d['Nombre Receptor'] || d['Receptor'] || '-';
+      }
       return d['Nombre Receptor'] || d['Nombre Receptor Local'] || d['Receptor'] || '-';
     }
 
@@ -1323,7 +1326,17 @@
         header: true,
         skipEmptyLines: true,
         complete: function(results) {
-          rawData = results.data;
+          let loadedData = results.data;
+          
+          // FILTRADO EXCLUSIVO PARA EJECUCIONES: Omitir registros donde Cod Tecnico sea "Validar"
+          if (currentSheetKey === "ejecuciones") {
+            loadedData = loadedData.filter(d => {
+              const codTec = String(d['Cod Tecnico'] || d['Cod Técnico'] || d['Cod_Tecnico'] || '').trim();
+              return codTec.toUpperCase() !== "VALIDAR";
+            });
+          }
+
+          rawData = loadedData;
           document.getElementById('status-box').innerHTML = `<i class="fa-solid fa-circle-check"></i> Base Actualizada (${rawData.length} registros)`;
           populateFilterLists();
           setMesActualDefault();
@@ -1389,9 +1402,9 @@
       };
 
       fillFilterUI('mes', getUniqueMesesCronologico());
-      fillFilterUI('usuario', getUnique(['Tecnico', 'Tecnico ', 'Técnico', 'Usuario', 'STCYG', 'usuario', 'Inspector', 'Inspector/a']));
+      fillFilterUI('usuario', getUnique(['Cod Tecnico', 'Cod Técnico', 'Tecnico', 'Tecnico ', 'Técnico', 'Usuario', 'STCYG', 'usuario', 'Inspector', 'Inspector/a']));
       fillFilterUI('localId', getUniqueLocalAndCCU());
-      fillFilterUI('cliente', getUnique(['Nombre Fantasía', 'Nombre Fantasía ', 'Nombre de Fantasia', 'Nombre Fantasia', 'Nombre Receptor', 'Cliente', 'cliente', 'Oficina']));
+      fillFilterUI('cliente', getUnique(['Nombre Fantasía', 'Nombre Fantasía ', 'Nombre de Fantasia', 'Nombre Fantasia', 'Nombre Receptor', 'Cliente', 'cliente', 'Oficina', 'Persona que Re']));
     }
 
     function setMesActualDefault() {
@@ -1419,12 +1432,12 @@
       const fFin = fFinStr ? new Date(fFinStr) : null;
 
       return rawData.filter(d => {
-        const dUsuario = String(d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Usuario'] || d['usuario'] || d['Inspector'] || d['Inspector/a'] || '').trim();
+        const dUsuario = String(d['Cod Tecnico'] || d['Cod Técnico'] || d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Usuario'] || d['usuario'] || d['Inspector'] || d['Inspector/a'] || '').trim();
         const dLocal = String(d['Local'] || '').trim();
         const dIdCCU = String(d['ID CCU'] || d['ID'] || d['Id CCU'] || d['ID Cliente (Escaneado)'] || d['ID Cliente (Manual)'] || '').trim();
         const dCliente = String(getNombreCliente(d)).trim();
         
-        const rawFecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || d['Fecha'];
+        const rawFecha = d['Fecha'] || d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha Realizado'] || d['Fecha/Hora'];
         const dFecha = parseDate(rawFecha);
 
         const matchUsuario = fUsuario.length === 0 || fUsuario.includes(dUsuario);
@@ -1955,8 +1968,8 @@
       data.forEach(d => {
         const qty = getServiciosQty(d);
         const cat = getCategoriaTecnico(d);
-        const usr = d['Usuario'] || d['usuario'] || d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Inspector'] || d['Inspector/a'] || 'Sin Usuario';
-        const tec = d['Técnico'] || d['Tecnico'] || d['Tecnico '] || d['Jefe de Ventas'] || d['Inspector'] || d['Inspector/a'] || 'Sin Técnico';
+        const usr = d['Cod Tecnico'] || d['Cod Técnico'] || d['Usuario'] || d['usuario'] || d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Inspector'] || d['Inspector/a'] || 'Sin Usuario';
+        const tec = d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Jefe de Ventas'] || d['Inspector'] || d['Inspector/a'] || usr;
 
         if(!t2Stats[cat]) t2Stats[cat] = {};
         if(!t2Stats[cat][usr]) t2Stats[cat][usr] = { tecnico: tec, SI: 0, NO: 0 };
@@ -1973,7 +1986,7 @@
           <thead>
             <tr>
               <th class="left">Categoría</th>
-              <th class="left">Usuario</th>
+              <th class="left">Usuario / Cód. Técnico</th>
               <th class="left">Técnico / Inspector</th>
               <th>NO (Cant. / %)</th>
               <th>SI (Cant. / %)</th>
@@ -2157,25 +2170,25 @@
           <tbody>`;
 
       noRealizadas.forEach(d => {
-        const tec = d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Usuario'] || d['Inspector'] || d['Inspector/a'] || '-';
-        const rawFecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
+        const tec = d['Cod Tecnico'] || d['Cod Técnico'] || d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Usuario'] || d['Inspector'] || d['Inspector/a'] || '-';
+        const rawFecha = d['Fecha'] || d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
         const fechaFormateada = formatDiaMes(rawFecha);
         const cliente = getNombreCliente(d);
         
         const motivo = getMotivoNoServicio(d);
         const comentario = d['Comentario No Resuelto'] || d['Comentario Motivo'] || d['Comentario'] || d['Observaciones'] || '-';
         
-        const fotoUrl1 = d['Foto Equipo'] || d['Foto Motivo'] || d['Foto Columnas o Post Mix'] || '';
-        const fotoUrl2 = d['Foto Equipo 2'] || d['Foto Salida FNE'] || '';
+        const fotoUrl1 = d['Imagen 1'] || d['Foto Equipo'] || d['Foto Motivo'] || d['Foto Columnas o Post Mix'] || '';
+        const fotoUrl2 = d['Imagen 2'] || d['Foto Equipo 2'] || d['Foto Salida FNE'] || '';
 
         let fotosHtml = '<span style="color:#bbb;">Sin fotos</span>';
         if ((fotoUrl1 && fotoUrl1.startsWith('http')) || (fotoUrl2 && fotoUrl2.startsWith('http'))) {
           fotosHtml = '<div class="photos-flex">';
           if (fotoUrl1 && fotoUrl1.startsWith('http')) {
-            fotosHtml += `<div class="img-container"><img src="${fotoUrl1}" class="thumb-img" alt="Foto 1" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'"></div>`;
+            fotosHtml += `<div class="img-container"><img src="${fotoUrl1}" class="thumb-img" alt="Imagen 1" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'"></div>`;
           }
           if (fotoUrl2 && fotoUrl2.startsWith('http')) {
-            fotosHtml += `<div class="img-container"><img src="${fotoUrl2}" class="thumb-img" alt="Foto 2" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'"></div>`;
+            fotosHtml += `<div class="img-container"><img src="${fotoUrl2}" class="thumb-img" alt="Imagen 2" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'"></div>`;
           }
           fotosHtml += '</div>';
         }
@@ -2195,6 +2208,7 @@
       document.getElementById('tabla-no-realizadas-container').innerHTML = html;
     }
 
+    /* RENDER EXCLUSIVO TABLA DE REALIZADOS (SOPORTA COLUMNAS DE EJECUCIONES: COD TECNICO, PERSONA QUE RE, IMAGEN 1 Y 2) */
     function renderTablaSiRealizadas(data) {
       let siRealizadas = data.filter(d => isServicioRealizado(d));
 
@@ -2204,8 +2218,8 @@
       }
 
       siRealizadas.sort((a, b) => {
-        const rawA = a['Fecha/Hora Ejecución 1'] || a['Fecha Programada 2'] || a['Fecha'] || a['Fecha Realizado'] || a['Fecha/Hora'] || '';
-        const rawB = b['Fecha/Hora Ejecución 1'] || b['Fecha Programada 2'] || b['Fecha'] || b['Fecha Realizado'] || b['Fecha/Hora'] || '';
+        const rawA = a['Fecha'] || a['Fecha/Hora Ejecución 1'] || a['Fecha Programada 2'] || a['Fecha Realizado'] || a['Fecha/Hora'] || '';
+        const rawB = b['Fecha'] || b['Fecha/Hora Ejecución 1'] || b['Fecha Programada 2'] || b['Fecha Realizado'] || b['Fecha/Hora'] || '';
         const dateA = parseDate(rawA);
         const dateB = parseDate(rawB);
         if (!dateA) return 1;
@@ -2213,38 +2227,43 @@
         return dateB - dateA;
       });
 
+      const esEjecuciones = currentSheetKey === "ejecuciones";
+
       let html = `
         <table>
           <thead>
             <tr>
-              <th class="left">Técnico / Inspector</th>
+              <th class="left">${esEjecuciones ? 'Cód. Técnico' : 'Técnico / Inspector'}</th>
               <th class="left">Fecha</th>
-              <th class="left">ID CCU</th>
-              <th class="left">Cliente (Nombre Fantasía)</th>
-              <th class="left">Nombre Receptor</th>
-              <th class="left">Comentario Cliente</th>
-              <th style="text-align:center;">Foto Columnas / Post Mix</th>
+              <th class="left">${esEjecuciones ? 'Proceso / ID' : 'ID CCU'}</th>
+              <th class="left">${esEjecuciones ? 'Receptor (Persona que Re)' : 'Cliente (Nombre Fantasía)'}</th>
+              <th class="left">${esEjecuciones ? 'Comentario / Proceso' : 'Nombre Receptor'}</th>
+              <th style="text-align:center;">${esEjecuciones ? 'Imágenes (1 y 2)' : 'Foto Columnas / Post Mix'}</th>
             </tr>
           </thead>
           <tbody>`;
 
       siRealizadas.forEach(d => {
-        const tec = d['Tecnico'] || d['Tecnico '] || d['Técnico'] || d['Usuario'] || d['Inspector'] || d['Inspector/a'] || '-';
-        const rawFecha = d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
+        const tec = d['Cod Tecnico'] || d['Cod Técnico'] || d['Usuario'] || d['Técnico'] || d['Tecnico'] || d['Inspector'] || d['Inspector/a'] || '-';
+        const rawFecha = d['Fecha'] || d['Fecha/Hora Ejecución 1'] || d['Fecha Programada 2'] || d['Fecha Realizado'] || d['Fecha/Hora'] || '-';
         const fechaFormateada = formatDiaMes(rawFecha);
-        const idCCU = getIdCCU(d);
-        const cliente = getNombreCliente(d);
-        const receptor = getNombreReceptor(d);
-        const comentario = getComentarioCliente(d);
+        const idCCU = esEjecuciones ? (d['Proceso'] || d['Número'] || getIdCCU(d)) : getIdCCU(d);
+        const cliente = esEjecuciones ? getNombreReceptor(d) : getNombreCliente(d);
+        const receptor = esEjecuciones ? (d['Proceso'] || '-') : getNombreReceptor(d);
         
-        const fotoUrl = getFotoEquipoColumna(d);
+        const fotoUrl1 = d['Imagen 1'] || d['Foto Columnas o Post Mix'] || d['Foto Equipo'] || d['Foto Motivo'] || '';
+        const fotoUrl2 = d['Imagen 2'] || d['Foto Equipo 2'] || d['Foto Salida FNE'] || '';
 
         let fotoHtml = '<span style="color:#bbb;">Sin fotos</span>';
-        if (fotoUrl && fotoUrl.startsWith('http')) {
-          fotoHtml = `
-            <div class="img-container">
-              <img src="${fotoUrl}" class="thumb-img" alt="Foto Columnas o Post Mix" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'">
-            </div>`;
+        if ((fotoUrl1 && fotoUrl1.startsWith('http')) || (fotoUrl2 && fotoUrl2.startsWith('http'))) {
+          fotoHtml = '<div class="photos-flex">';
+          if (fotoUrl1 && fotoUrl1.startsWith('http')) {
+            fotoHtml += `<div class="img-container"><img src="${fotoUrl1}" class="thumb-img" alt="Imagen 1" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'"></div>`;
+          }
+          if (fotoUrl2 && fotoUrl2.startsWith('http')) {
+            fotoHtml += `<div class="img-container"><img src="${fotoUrl2}" class="thumb-img" alt="Imagen 2" loading="lazy" onerror="this.src='https://via.placeholder.com/50?text=Error'"></div>`;
+          }
+          fotoHtml += '</div>';
         }
 
         html += `
@@ -2254,7 +2273,6 @@
             <td class="left" style="font-weight: 500;">${idCCU}</td>
             <td class="left">${cliente}</td>
             <td class="left" style="font-weight: 500;">${receptor}</td>
-            <td class="left" style="font-size: 11px; color: #2e7d32;">${comentario}</td>
             <td style="text-align:center;">${fotoHtml}</td>
           </tr>`;
       });
