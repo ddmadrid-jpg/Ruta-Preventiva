@@ -2300,13 +2300,27 @@
       document.getElementById('tabla-no-realizadas-container').innerHTML = html;
     }
 
-    /* RENDER EXCLUSIVO TABLA DE REALIZADOS (INCLUYE COLUMNA N° SOLICITUD EN EJECUCIONES) */
+    /* RENDER EXCLUSIVO TABLA DE REALIZADOS (DEDUPLICA N° SOLICITUD EN EJECUCIONES) */
     function renderTablaSiRealizadas(data) {
       let siRealizadas = data.filter(d => isServicioRealizado(d));
 
       if (siRealizadas.length === 0) {
         document.getElementById('tabla-si-realizadas-container').innerHTML = `<div class="no-data">Sin servicios realizados con los filtros seleccionados.</div>`;
         return;
+      }
+
+      // Deduplicación por N° Solicitud única en la pestaña Ejecuciones
+      if (currentSheetKey === "ejecuciones") {
+        const solicitudesVistas = new Set();
+        siRealizadas = siRealizadas.filter(d => {
+          const numSol = String(d['Número'] || d['Número '] || d['Numero'] || d['Número de Solicitud'] || '').trim();
+          if (!numSol || numSol === '-') return true;
+          if (solicitudesVistas.has(numSol)) {
+            return false; // Descarta filas duplicadas de una misma solicitud
+          }
+          solicitudesVistas.add(numSol);
+          return true;
+        });
       }
 
       siRealizadas.sort((a, b) => {
